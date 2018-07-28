@@ -7,7 +7,6 @@ Imports Dynamitey.Dynamic
 Partial Class ReconWindow
     Implements INotifyPropertyChanged
 
-    Private _filters As New List(Of Filter)
     Private _aggregates As New List(Of Aggregate)
     Private _completenessComparisions As New List(Of Comparision)
     Private _matchingComparisions As New List(Of Comparision)
@@ -246,103 +245,7 @@ Partial Class ReconWindow
 
     End Sub
 
-    Private Sub ApplyFilter()
-        Dim removes As New List(Of DataRow)
-        For Each f In _filters
-            'Todo Match DataSourceName
-            For Each leftitem In _left.AsEnumerable
-                For Each col In f.FilterColumns
-                    Select Case f.FilterOption
-                        Case FilterOption.NonZero
-                            Dim result As Integer
-                            If Integer.TryParse(leftitem(col), result) Then
-                                If result = 0 Then
-                                    removes.Add(leftitem)
-                                    Continue For
-                                End If
-                            End If
-                        Case FilterOption.NonBlankOrZero
-                            If IsDBNull(leftitem(col)) Then
-                                removes.Add(leftitem)
-                                Continue For
-                            End If
-                            Dim result As Integer
-                            If Integer.TryParse(leftitem(col), result) Then
-                                If result = 0 Then
-                                    removes.Add(leftitem)
-                                    Continue For
-                                End If
-                            End If
 
-                            If String.IsNullOrWhiteSpace(leftitem(col)) Then
-                                removes.Add(leftitem)
-                                Continue For
-                            End If
-                    End Select
-                Next
-            Next
-        Next
-
-        For Each r In removes
-            _left.Rows.Remove(r)
-        Next
-    End Sub
-
-    Private Sub ApplyFilterX()
-        'Dim removes As New ConcurrentStack(Of DataRow)
-        ''Todo Match DataSourceName
-        'For Each f In _filters
-        '    Select Case f.FilterOption
-        '        Case FilterOption.NonBlankOrZero
-        '            _left.AsEnumerable.Where(Function(w)
-        '                                         Parallel.ForEach(f.FilterColumns,
-        '                                                          Sub(col, loopState)
-        '                                                              If IsDBNull(w(col)) Then
-        '                                                                  removes.Push(w)
-        '                                                                  loopState.ShouldExitCurrentIteration = True
-        '                                                              End If
-        '                                                              Dim result As Integer
-        '                                                              If Integer.TryParse(w(col), result) Then
-        '                                                                  If result = 0 Then
-        '                                                                      removes.Push(w)
-        '                                                                      loopState.ShouldExitCurrentIteration = True
-        '                                                                  End If
-        '                                                              End If
-
-        '                                                              If String.IsNullOrWhiteSpace(w(col)) Then
-        '                                                                  removes.Push(w)
-        '                                                                  loopState.ShouldExitCurrentIteration = True
-        '                                                              End If
-        '                                                          End Sub)
-        '                                     End Function)
-        '    End Select
-
-
-
-        '    Parallel.ForEach(_left.AsEnumerable,
-        '                     Sub(leftitem)
-        '                         For Each col In f.FilterColumns
-        '                             Select Case f.FilterOption
-        '                                 Case FilterOption.NonZero
-        '                                     Dim result As Integer
-        '                                     If Integer.TryParse(leftitem(col), result) Then
-        '                                         If result = 0 Then
-        '                                             removes.Push(leftitem)
-        '                                             Continue For
-        '                                         End If
-        '                                     End If
-        '                                 Case FilterOption.NonBlankOrZero
-
-        '                             End Select
-        '                         Next
-
-        '                     End Sub)
-        'Next
-
-        'For Each r In removes
-        '    _left.Rows.Remove(r)
-        'Next
-    End Sub
 
     Private Function Reconcile() As Tuple(Of Data.DataRow, Data.DataRow)
         For Each leftitem In _left.AsEnumerable

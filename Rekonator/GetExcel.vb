@@ -26,11 +26,14 @@ Public Class GetExcel
     '    End Using
     'End Sub
 
-    Public Function MakeReconSource(sourcePath As String, worksheetName As String, reconSourceName As String) As ReconSource
-        Application.Message($"Loading Table {reconSourceName} from Excel Worksheet {worksheetName}")
+    Public Function Load(reconSource As ReconSource) As Boolean
+        Dim reconTable As String = reconSource.ReconTable
+        Dim filePath As String = reconSource.Parameters("FilePath")
+        Dim worksheetName As String = reconSource.Parameters("Worksheet")
+        Application.Message($"Loading Table {reconTable} from Excel Worksheet {worksheetName}")
         Dim iRow As Integer = 0
         Try
-            Using fileStream = File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite) 'FileShare is ReadWrite even though FileAccess is Read Only.  This allows file to be open if it open in another process e.g. Excel
+            Using fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite) 'FileShare is ReadWrite even though FileAccess is Read Only.  This allows file to be open if it open in another process e.g. Excel
                 Using excelReader = ExcelReaderFactory.CreateReader(fileStream)
                     Do While excelReader.Name().ToLower <> worksheetName.ToLower
                         excelReader.NextResult()
@@ -60,80 +63,34 @@ Public Class GetExcel
                         rowList.Add(excelReader.GetValue(idx))
                     Next
 
-                    'Make Table
-                    Dim sb As New StringBuilder
-                    sb.AppendLine($"IF(OBJECT_ID('Rekonator..{reconSourceName}') IS NOT NULL) DROP TABLE [{reconSourceName}];")
+                    Using sql As New SQL(reconTable, fieldCount, headerList, typeList)
+                        If Not sql.CreateTable() Then
+                            Return False
+                        End If
 
-                    sb.AppendLine($"CREATE TABLE [{reconSourceName}] (")
-                    For idx = 0 To fieldCount - 1
-                        sb.Append($"[{headerList(idx)}]")
-                        Select Case typeList(idx).Name
-                            Case "Double"
-                                sb.AppendLine(" DECIMAL(14,2) NULL,")
-                            Case "DateTime"
-                                sb.AppendLine(" DATETIME NULL,")
-                            Case "String"
-                                sb.AppendLine(" NVARCHAR(4000) NULL,")
-                            Case Else
-                                Beep()
-                        End Select
-
-                    Next
-                    sb.AppendLine(");")
-
-                    Using connection As New SqlConnection(Application.ConnectionString)
-                        Dim command As New SqlCommand(sb.ToString, connection)
-                        command.Connection.Open()
-                        command.ExecuteNonQuery()
-                    End Using
-
-                    Do
-                        iRow += 1
-                        If iRow Mod 1000 = 0 Then Application.Message(iRow.ToString)
-                        'Starts with First Row already read from excel
-                        sb.Clear()
-                        sb.AppendLine($"INSERT INTO [dbo].[{reconSourceName}] VALUES (")
-
-                        'Whats Faster? or string.join
-                        For idx = 0 To fieldCount - 1
-                            If rowList(idx) Is Nothing Then
-                                sb.AppendLine("Null,")
-                            Else
-                                Select Case typeList(idx).Name
-                                    Case "Double"
-                                        sb.AppendLine($"{rowList(idx)},")
-                                    Case "DateTime"
-                                        sb.AppendLine($"'{CDate(rowList(idx)).ToString("yyyy-MM-dd hh:mm:ss")}',")
-                                    Case "String"
-                                        sb.AppendLine($"'{rowList(idx).ToString.Replace("'", "''")}',")
-                                End Select
+                        Do
+                            If Not sql.InsertRow(rowList) Then
+                                Return False
                             End If
-                        Next
-                        sb.Replace(",", "", sb.Length - 3, 1)
-                        sb.AppendLine(");")
-                        Using connection As New SqlConnection(Application.ConnectionString)
-                            Dim command As New SqlCommand(sb.ToString, connection)
-                            command.Connection.Open()
-                            command.ExecuteNonQuery()
-                        End Using
 
-                        'Get Next Row
-                        If Not excelReader.Read() Then Exit Do
-                        rowList.Clear()
-                        For idx = 0 To fieldCount - 1
-                            rowList.Add(excelReader.GetValue(idx))
-                        Next
-                    Loop
+                            'Get Next Row
+                            If Not excelReader.Read() Then Exit Do
+                            rowList.Clear()
+                            For idx = 0 To fieldCount - 1
+                                rowList.Add(excelReader.GetValue(idx))
+                            Next
+                        Loop
+                    End Using
 
                 End Using
             End Using
             Application.Message($"Completed: {iRow}")
-            ' Return
+            Return True
         Catch ex As Exception
             Application.ErrorMessage($"Row: {iRow}: {ex.Message}")
 
         End Try
-        Return Nothing
+        Return False
 
     End Function
 

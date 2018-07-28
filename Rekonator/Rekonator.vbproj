@@ -131,7 +131,6 @@
     <Compile Include="Models\CompareMethod.vb" />
     <Compile Include="Models\Comparision.vb" />
     <Compile Include="Models\DataSource.vb" />
-    <Compile Include="Models\Filter.vb" />
     <Compile Include="Models\Mock\Mock.vb" />
     <Compile Include="Models\Reconciliation.vb" />
     <Compile Include="Models\ReconSource.vb" />

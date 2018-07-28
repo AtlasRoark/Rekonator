@@ -7,7 +7,6 @@ Imports Dynamitey.Dynamic
 Partial Class MainWindow
     Implements INotifyPropertyChanged
 
-    Private _filters As New List(Of Filter)
     Private _aggregates As New List(Of Aggregate)
     Private _completenessComparisions As New List(Of Comparision)
     Private _matchingComparisions As New List(Of Comparision)
@@ -15,8 +14,6 @@ Partial Class MainWindow
     Private _solution As Solution
     'Cant do notify prop change on datatables.  
     Private _left As New DataTable
-    Private _leftRS As ReconSource
-    Private _rightRS As ReconSource
     Private _right As New DataTable
     Private _leftDetails As New DataTable
     Private _rightDetails As New DataTable
@@ -162,17 +159,15 @@ Partial Class MainWindow
         MatchSet = _match.AsDataView
 
         If _left.Rows.Count = 0 Or _right.Rows.Count = 0 Then Exit Sub
-        ApplyFilterX()
-
 
         'DoAggregation()
-        Do
-            Debug.Print(_left.Rows.Count.ToString)
-            Dim remove As Tuple(Of Data.DataRow, Data.DataRow) = Reconcile()
-            If remove Is Nothing Then Exit Do
-            _left.Rows.Remove(remove.Item1)
-            _right.Rows.Remove(remove.Item2)
-        Loop
+        'Do
+        '    Debug.Print(_left.Rows.Count.ToString)
+        '    Dim remove As Tuple(Of Data.DataRow, Data.DataRow) = Reconcile()
+        '    If remove Is Nothing Then Exit Do
+        '    _left.Rows.Remove(remove.Item1)
+        '    _right.Rows.Remove(remove.Item2)
+        'Loop
 
         LeftSet = _left.AsDataView
         RightSet = _right.AsDataView
@@ -225,92 +220,6 @@ Partial Class MainWindow
 
     End Sub
 
-    Private Sub ApplyFilter()
-        Dim removes As New List(Of DataRow)
-        For Each f In _filters
-            'Todo Match DataSourceName
-            For Each leftitem In _left.AsEnumerable
-                For Each col In f.FilterColumns
-                    Select Case f.FilterOption
-                        Case FilterOption.NonZero
-                            Dim result As Integer
-                            If Integer.TryParse(leftitem(col), result) Then
-                                If result = 0 Then
-                                    removes.Add(leftitem)
-                                    Continue For
-                                End If
-                            End If
-                        Case FilterOption.NonBlankOrZero
-                            If IsDBNull(leftitem(col)) Then
-                                removes.Add(leftitem)
-                                Continue For
-                            End If
-                            Dim result As Integer
-                            If Integer.TryParse(leftitem(col), result) Then
-                                If result = 0 Then
-                                    removes.Add(leftitem)
-                                    Continue For
-                                End If
-                            End If
-
-                            If String.IsNullOrWhiteSpace(leftitem(col)) Then
-                                removes.Add(leftitem)
-                                Continue For
-                            End If
-                    End Select
-                Next
-            Next
-        Next
-
-        For Each r In removes
-            _left.Rows.Remove(r)
-        Next
-    End Sub
-
-    Private Sub ApplyFilterX()
-        Dim removes As New ConcurrentStack(Of DataRow)
-        'Todo Match DataSourceName
-        For Each f In _filters
-
-            Parallel.ForEach(_left.AsEnumerable,
-                             Sub(leftitem)
-                                 For Each col In f.FilterColumns
-                                     Select Case f.FilterOption
-                                         Case FilterOption.NonZero
-                                             Dim result As Integer
-                                             If Integer.TryParse(leftitem(col), result) Then
-                                                 If result = 0 Then
-                                                     removes.Push(leftitem)
-                                                     Continue For
-                                                 End If
-                                             End If
-                                         Case FilterOption.NonBlankOrZero
-                                             If IsDBNull(leftitem(col)) Then
-                                                 removes.Push(leftitem)
-                                                 Continue For
-                                             End If
-                                             Dim result As Integer
-                                             If Integer.TryParse(leftitem(col), result) Then
-                                                 If result = 0 Then
-                                                     removes.Push(leftitem)
-                                                     Continue For
-                                                 End If
-                                             End If
-
-                                             If String.IsNullOrWhiteSpace(leftitem(col)) Then
-                                                 removes.Push(leftitem)
-                                                 Continue For
-                                             End If
-                                     End Select
-                                 Next
-
-                             End Sub)
-        Next
-
-        For Each r In removes
-            _left.Rows.Remove(r)
-        Next
-    End Sub
 
     Private Function Reconcile() As Tuple(Of Data.DataRow, Data.DataRow)
         For Each leftitem In _left.AsEnumerable
@@ -405,23 +314,12 @@ Partial Class MainWindow
     End Sub
 
     Private Sub btnMatch_Click(sender As Object, e As RoutedEventArgs)
-        Task.Factory.StartNew(Sub() Configure("Huber"))
-        MessageLog.Clear
+        Task.Factory.StartNew(Sub() Configure("Test 1"))
+        MessageLog.Clear()
     End Sub
 
-    Private Function Configure(v As String) As Task(Of Object)
-        'Test 1
-        '_completenessComparisions.Add(New Comparision With {.LeftColumn = "ST Export ID", .RightColumn = "Item ID", .ComparisionOption = 1, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
-        '_matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Export ID", .RightColumn = "Item ID", .ComparisionOption = 1, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
-        '_matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Name", .RightColumn = "Item Name", .ComparisionOption = 0, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
-        '_matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Qty", .RightColumn = "Item Qty", .ComparisionOption = 4, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
-        '_matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Price", .RightColumn = "Item Price", .ComparisionOption = 2, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
-        '_matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Reorder", .RightColumn = "Item Reorder", .ComparisionOption = 1, .ComparisionMethod = CompareMethod.GetMethod("Integer Equals")})
-        '_matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Service Date", .RightColumn = "Service Date", .ComparisionOption = 0, .ComparisionMethod = CompareMethod.GetMethod("Date Equals")})
-        'Using ge As New GetExcel
-        '    _left = ge.GetList("C:\Users\Peter Grillo\source\repos\Test.xlsx", "ST Items")
-        '    _right = ge.GetList("C:\Users\Peter Grillo\source\repos\Test.xlsx", "Item")
-        'End Using
+    Private Function Configure(testName As String) As Task(Of Object)
+
 
         'Test Agg
         '_filters.Add(New Filter With {.DataSourceName = "", .FilterColumns = {"Balance"}, .FilterOption = .FilterOption.NonBlankOrZero})
@@ -439,51 +337,87 @@ Partial Class MainWindow
         '    _right = ge.GetList("C:\Users\Peter Grillo\source\repos\Test.xlsx", "Agg Entries")
         'End Using
 
-        'Test Huber
+        'Test 1
         Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
         Dim excelParam As New Dictionary(Of String, String)
-        excelParam.Add("FilePath", "C:\Users\Peter Grillo\Downloads\March Activity.xls")
-        excelParam.Add("Worksheet", "ST Inv")
-        _filters.Add(New Filter With {.DataSourceName = "", .FilterColumns = {"ExportId"}, .FilterOption = .FilterOption.NonBlankOrZero})
+        excelParam.Add("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
+        excelParam.Add("Worksheet", "ST Items")
+        Dim leftRS As New ReconSource With
+            {.ReconDataSource = excelDS,
+            .ReconTable = "aset",
+            .IsLoaded = False,
+            .Parameters = excelParam}
 
-        Dim leftRS As New ReconSource With {.ReconDataSource = excelDS, .ReconTable = "stinvoice", .IsLoaded = True, .Parameters = excelParam, .Filters = _filters}
-        excelParam("Worksheet") = "Mar Inv"
-        Dim rightRS As New ReconSource With {.ReconDataSource = excelDS, .ReconTable = "qbinvoice", .IsLoaded = True, .Parameters = excelParam}
+        excelParam = New Dictionary(Of String, String)
+        excelParam.Add("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
+        excelParam("Worksheet") = "Item"
+        Dim rightRS As New ReconSource With
+            {.ReconDataSource = excelDS,
+            .ReconTable = "bset",
+            .IsLoaded = False,
+            .Parameters = excelParam}
 
-        _completenessComparisions.Add(New Comparision With {.LeftColumn = "QB Export ID", .RightColumn = "TxnId", .ComparisionOption = 0, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
-        _matchingComparisions.Add(New Comparision With {.LeftColumn = "Total", .RightColumn = "Subtotal", .ComparisionOption = 2, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
-        Reconciliation.Add("March Invoices", leftRS, rightRS, _completenessComparisions, _matchingComparisions)
+        _completenessComparisions.Add(New Comparision With {.LeftColumn = "ST Export ID", .RightColumn = "Item ID", .ComparisionOption = 1, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
+        _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Export ID", .RightColumn = "Item ID", .ComparisionOption = 1, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
+        _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Name", .RightColumn = "Item Name", .ComparisionOption = 0, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
+        _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Qty", .RightColumn = "Item Qty", .ComparisionOption = 4, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
+        _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Price", .RightColumn = "Item Price", .ComparisionOption = 2, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
+        _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Reorder", .RightColumn = "Item Reorder", .ComparisionOption = 1, .ComparisionMethod = CompareMethod.GetMethod("Integer Equals")})
+        _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Service Date", .RightColumn = "Service Date", .ComparisionOption = 0, .ComparisionMethod = CompareMethod.GetMethod("Date Equals")})
+        Reconciliation.Add("Test Set", leftRS, rightRS, _completenessComparisions, _matchingComparisions)
 
-        _solution = New Solution With {.SolutionName = "Huber", .Reconciliations = Reconciliation.Reconciliations}
+        'Test Huber
+        'Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
+        'Dim excelParam As New Dictionary(Of String, String)
+        'excelParam.Add("FilePath", "C:\Users\Peter Grillo\Downloads\March Activity.xls")
+        'excelParam.Add("Worksheet", "ST Inv")
+        'Dim leftRS As New ReconSource With
+        '    {.ReconDataSource = excelDS,
+        '    .ReconTable = "stinvoice",
+        '    .IsLoaded = True,
+        '    .Parameters = excelParam,
+        '    .Where = "NOT (ISNULL([ExportId], '')='' OR [ExportId]='0')"}
 
-        If Not _solution.Reconciliations(0).LeftReconSource.IsLoaded Then
+        'excelParam = Dictionary(Of String, String)
+        'excelParam.Add("FilePath", "C:\Users\Peter Grillo\Downloads\March Activity.xls")
+        'excelParam("Worksheet") = "Mar Inv"
+        'Dim rightRS As New ReconSource With
+        '    {.ReconDataSource = excelDS,
+        '    .ReconTable = "qbinvoice",
+        '    .IsLoaded = True,
+        '    .Parameters = excelParam,
+        '    .Where = "NOT (ISNULL([SubTotal], '')='' OR [SubTotal]='0')"}
+
+        '_completenessComparisions.Add(New Comparision With {.LeftColumn = "QB Export ID", .RightColumn = "TxnId", .ComparisionOption = 0, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
+        '_matchingComparisions.Add(New Comparision With {.LeftColumn = "Total", .RightColumn = "Subtotal", .ComparisionOption = 2, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
+        'Reconciliation.Add("March Invoices", leftRS, rightRS, _completenessComparisions, _matchingComparisions)
+
+        _solution = New Solution With {.SolutionName = testName, .Reconciliations = Reconciliation.Reconciliations}
+        If Not leftRS.IsLoaded Then
             Using ge As New GetExcel
-                '_leftRS = ge.MakeReconSource("C:\Users\Peter Grillo\Downloads\March Activity.xls", "ST Inv", "stinvoice")
+                leftRS.IsLoaded = ge.Load(leftRS)
             End Using
         End If
-
-        If Not _solution.Reconciliations(0).RightReconSource.IsLoaded Then
+        If Not rightRS.IsLoaded Then
             Using ge As New GetExcel
-                '_rightRS = ge.MakeReconSource("C:\Users\Peter Grillo\Downloads\March Activity.xls", "Mar Inv", "qbinvoice")
+                rightRS.IsLoaded = ge.Load(rightRS)
             End Using
         End If 'PL Reconcile
         'Using ge As New GetExcel
         'Dim _left = ge.MakeReconSource("C:\Users\Peter Grillo\Downloads\March Activity.xlsx", "ST PL") As ReconSource
         ''_right = ge.GetList("C:\Users\Peter Grillo\Downloads\March Activity Sorted.xlsx", "QB PL")
         'End Using
+        Using sql As New SQL
+            Dim rs As ReconSource = _solution.Reconciliations(0).LeftReconSource
+            _left = sql.GetDataTable(ReconSource.GetSelect(rs))
+            OnPropertyChanged("LeftSet")
+            rs = _solution.Reconciliations(0).RightReconSource
+            _right = sql.GetDataTable(ReconSource.GetSelect(rs))
+            OnPropertyChanged("RightSet")
+        End Using
 
 
-        String connectionString = "Data Source=192.168.0.192;Initial Catalog=ParallelCodes;User ID=sa;Password=789";
-SqlConnection con = New SqlConnection(connectionString);
-SqlCommand cmd = New SqlCommand("select * from Producttbl", con);
-con.Open();
-SqlDataAdapter adapter = New SqlDataAdapter(cmd);
-DataTable dt = New DataTable();
-adapter.Fill(dt);
-myDataGrid.ItemsSource = dt.DefaultView;
-cmd.Dispose();
-con.Close();
-        'Test()
+        Test()
     End Function
 
     Public Sub AddMessage(messageText As String, isError As Boolean)
