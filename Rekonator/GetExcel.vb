@@ -31,7 +31,6 @@ Public Class GetExcel
         Dim filePath As String = reconSource.Parameters("FilePath")
         Dim worksheetName As String = reconSource.Parameters("Worksheet")
         Application.Message($"Loading Table {reconTable} from Excel Worksheet {worksheetName}")
-        Dim iRow As Integer = 0
         Try
             Using fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite) 'FileShare is ReadWrite even though FileAccess is Read Only.  This allows file to be open if it open in another process e.g. Excel
                 Using excelReader = ExcelReaderFactory.CreateReader(fileStream)
@@ -84,10 +83,10 @@ Public Class GetExcel
 
                 End Using
             End Using
-            Application.Message($"Completed: {iRow}")
+            Application.Message("Completed.")
             Return True
         Catch ex As Exception
-            Application.ErrorMessage($"Row: {iRow}: {ex.Message}")
+            Application.ErrorMessage($"Error Loading Excel: {ex.Message}")
 
         End Try
         Return False

@@ -97,7 +97,7 @@
                              Width="400">
                 <local:DataSourcePage />
             </controls:Flyout>
-            <controls:Flyout x:Name="RightFlyout" 
+            <controls:Flyout x:Name="RightFlyout"
                              Header="Right Data"
                              Position="Right"
                              IsAutoCloseEnabled="True"
@@ -108,8 +108,11 @@
                              Header="Messages"
                              Position="Bottom"
                              IsAutoCloseEnabled="True"
-                             Width="800" Height="400">
-                <ListBox x:Name="lbMessageLog" ItemsSource="{Binding MessageLog}" DisplayMemberPath="MessageText" />
+                             Width="800"
+                             Height="400">
+                <ListBox x:Name="lbMessageLog"
+                         ItemsSource="{Binding MessageLog}"
+                         DisplayMemberPath="MessageText" />
 
             </controls:Flyout>
 
@@ -150,6 +153,13 @@
                   x:Name="dgLeft"
                   ItemsSource="{Binding LeftSet}"
                   Style="{StaticResource ReconGrid}">
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell"
+                       BasedOn="{StaticResource {x:Type DataGridCell}}">
+                    <EventSetter Event="PreviewKeyDown"
+                                 Handler="DataGridCell_PreviewKeyDown" />
+                </Style>
+            </DataGrid.CellStyle>
         </DataGrid>
 
         <!--ActiveLayoutIndex="{Binding ElementName=layoutCombo, Path=SelectedIndex}"
@@ -173,6 +183,13 @@
                   Grid.Column="2"
                   ItemsSource="{Binding RightSet}"
                   Style="{StaticResource ReconGrid}">
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell"
+                       BasedOn="{StaticResource {x:Type DataGridCell}}">
+                    <EventSetter Event="PreviewKeyDown"
+                                 Handler="DataGridCell_PreviewKeyDown" />
+                </Style>
+            </DataGrid.CellStyle>
         </DataGrid>
 
 
@@ -194,6 +211,8 @@
                        BasedOn="{StaticResource {x:Type DataGridCell}}">
                     <Setter Property="Background"
                             Value="{Binding RelativeSource={RelativeSource Self}, Path=Content.Text, Converter={StaticResource ValueToBrushConverter}}" />
+                    <EventSetter Event="PreviewKeyDown"
+                                 Handler="DataGridCell_PreviewKeyDown" />
                 </Style>
             </DataGrid.CellStyle>
         </DataGrid >
@@ -201,70 +220,29 @@
 
         <StackPanel Grid.Row="2"
                     Grid.Column="1">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center">
                 <Button Content="Match"
                         Name="btnMatch"
                         HorizontalAlignment="Center"
                         Click="btnMatch_Click" />
                 <ToggleButton IsChecked="{Binding ElementName=BottomFlyout, Path=IsOpen}"
-                              Cursor="Hand" Margin="5,0,0,0">
+                              Cursor="Hand"
+                              Margin="5,0,0,0">
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
         <DataGrid x:Name="dgMatch"
                   Grid.Row="3"
                   Grid.Column="1"
-                  ItemsSource="{Binding MatchSet}"
-                  Style="{StaticResource ReconGrid}">
-            <!--Empty CellStyle has the effect of making the rowheight the same as differ, for some reason-->
-            <!--<DataGrid.CellStyle>
-                    <Style TargetType="DataGridCell">
-                    </Style>
-                </DataGrid.CellStyle>-->
+                  ItemsSource="{Binding MatchSet}">
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell"
+                       BasedOn="{StaticResource {x:Type DataGridCell}}">
+                    <EventSetter Event="PreviewKeyDown"
+                                 Handler="DataGridCell_PreviewKeyDown" />
+                </Style>
+            </DataGrid.CellStyle>
         </DataGrid>
-
-
-
-        <!--<StackPanel DockPanel.Dock="Bottom"
-                    Orientation="Horizontal">
-            <ComboBox Text="Reconcile">
-                <ComboBoxItem>Items</ComboBoxItem>
-                <ComboBoxItem>Purchase Orders</ComboBoxItem>
-            </ComboBox>
-            <DatePicker Text="From Date" />
-            <DatePicker Text="To Date" />
-            <Button Name="btnRecon" Content="Reconate It"
-                    HorizontalAlignment="Right"
-                    Click="btnRecon_Click"/>
-        </StackPanel>
-
-        <StackPanel DockPanel.Dock="Left" HorizontalAlignment="Center">
-            <TextBlock Text="ServiceTitan" />
-            <DataGrid Name="dgLeft"
-                      ItemsSource="{Binding LeftSet}"
-                      AutoGenerateColumns="True" />
-        </StackPanel>
-
-        <StackPanel DockPanel.Dock="Right">
-            <TextBlock Text="QuickBooks" />
-            <DataGrid Name="dgRight"
-                      ItemsSource="{Binding RightSet}"
-                      AutoGenerateColumns="True" />
-        </StackPanel>
-
-        <StackPanel DockPanel.Dock="Top">
-            <TextBlock Text="No Match" />
-            <DataGrid Name="dgDiffer"
-                      ItemsSource="{Binding DifferSet}"
-                      AutoGenerateColumns="True"/>
-        </StackPanel>
-
-        <StackPanel DockPanel.Dock="Top">
-            <TextBlock Text="Match" />
-            <DataGrid Name="dgMatch"
-                      ItemsSource="{Binding MatchSet}"
-                      AutoGenerateColumns="True"/>
-        </StackPanel>-->
-
     </Grid>
 </controls:MetroWindow>

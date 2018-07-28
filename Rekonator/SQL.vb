@@ -12,7 +12,8 @@ Public Class SQL
     Private _typeList As List(Of Type)
     Private _sb As New StringBuilder
     Private _rowNumber As Integer = 0
-    Private _CurrencyKeyWords() As String = {"Amount", "Total", "Payment", "Subtotal", "Debit", "Credit", "Balance", "Amt", "Cost"}
+    Private _CurrencyKeywords() As String = {"amount", "total", "payment", "subtotal", "debit", "credit", "balance", "amt", "price", "cost", "$"}
+    Private _IntegerKeywords() As String = {"id", "#", "status", "No", "Num"}
 
     Public Sub New()
         OpenConnection()
@@ -40,23 +41,26 @@ Public Class SQL
         Catch ex As Exception
             Application.ErrorMessage($"Error getting dataview for {selectCommand}: {ex.Message}")
         End Try
+        Return Nothing
     End Function
 
     Public Function CreateTable() As Boolean
         Try
+            _sb.Clear()
             _sb.AppendLine($"IF(OBJECT_ID('Rekonator..{_reconTable}') IS NOT NULL) DROP TABLE [{_reconTable}];")
 
             _sb.AppendLine($"CREATE TABLE [{_reconTable}] (")
-            _sb.AppendLine("id int IDENTITY(1,1),")
+            _sb.AppendLine("rekonid int IDENTITY(1,1),")
             For idx = 0 To _fieldCount - 1
                 _sb.Append($"[{_headerList(idx)}]")
                 Select Case _typeList(idx).Name
                     Case "Double"
-                        If _CurrencyKeyWords.Contains(_headerList(idx)) Then
+                        If IsCurrency(_headerList(idx)) Then
                             _sb.AppendLine(" DECIMAL(14,2) NULL,")
+                        ElseIf IsInteger(_headerList(idx)) Then
+                            _sb.AppendLine(" INT NULL,")
                         Else
                             _sb.AppendLine(" DECIMAL(16,6) NULL,")
-
                         End If
                     Case "DateTime"
                         _sb.AppendLine(" DATETIME NULL,")
@@ -117,6 +121,27 @@ Public Class SQL
         _connection.Open()
     End Sub
 
+    Private Function IsCurrency(header As String) As Boolean
+        Dim parts = header.Split(" ")
+        For Each part In parts
+            If _CurrencyKeywords.Contains(part.ToLower) Then
+                Return True
+                Exit For
+            End If
+        Next
+        Return False
+    End Function
+
+    Private Function IsInteger(header As String) As Boolean
+        Dim parts = header.Split(" ")
+        For Each part In parts
+            If _IntegerKeywords.Contains(part.ToLower) Then
+                Return True
+                Exit For
+            End If
+        Next
+        Return False
+    End Function
 #Region "IDisposable Support"
     Private disposedValue As Boolean ' To detect redundant calls
 

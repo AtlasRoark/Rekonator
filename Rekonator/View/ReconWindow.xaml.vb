@@ -247,60 +247,19 @@ Partial Class ReconWindow
 
 
 
-    Private Function Reconcile() As Tuple(Of Data.DataRow, Data.DataRow)
-        For Each leftitem In _left.AsEnumerable
-            For Each rightitem In _right.AsEnumerable
-                Dim matchingResult = DoCompare(leftitem, rightitem, _matchingComparisions)
-                If matchingResult.Item1 = True Then
-                    InsertRow(leftitem, rightitem, _matchingComparisions, True)
-                    Return New Tuple(Of Data.DataRow, Data.DataRow)(leftitem, rightitem)
-                Else
-                    Dim completenessResult = DoCompare(leftitem, rightitem, _completenessComparisions)
-                    If completenessResult.Item1 Then  'ids match but not complete match
-                        InsertRow(leftitem, rightitem, _matchingComparisions, False, matchingResult.Item2)
-                        Return New Tuple(Of Data.DataRow, Data.DataRow)(leftitem, rightitem)
-                    End If
-                End If
-            Next
-        Next
-        Return Nothing
-    End Function
-
-    Private Function ReconcileX() As Tuple(Of Data.DataRow, Data.DataRow)
-        Parallel.ForEach(_left.AsEnumerable,
-                         Sub(leftitem)
-                             Parallel.ForEach(_right.AsEnumerable,
-                                              Function(rightitem)
-                                                  Dim matchingResult = DoCompare(leftitem, rightitem, _matchingComparisions)
-                                                  If matchingResult.Item1 = True Then
-                                                      InsertRow(leftitem, rightitem, _matchingComparisions, True)
-                                                      Return New Tuple(Of Data.DataRow, Data.DataRow)(leftitem, rightitem)
-                                                      Exit Function
-                                                  Else
-                                                      Dim completenessResult = DoCompare(leftitem, rightitem, _completenessComparisions)
-                                                      If completenessResult.Item1 Then  'ids match but not complete match
-                                                          InsertRow(leftitem, rightitem, _matchingComparisions, False, matchingResult.Item2)
-                                                          Return New Tuple(Of Data.DataRow, Data.DataRow)(leftitem, rightitem)
-                                                      End If
-                                                  End If
-                                              End Function)
-                         End Sub)
-        Return Nothing
-    End Function
-
-    Private Function DoCompare(leftitem As Data.DataRow, rightitem As Data.DataRow, comparisions As List(Of Comparision), Optional IsAll As Boolean = True) As Tuple(Of Boolean, List(Of String))
-        Dim errorCols As New List(Of String)
-        For Each compare In comparisions
-            If IsDBNull(leftitem(compare.LeftColumn)) OrElse
-            IsDBNull(rightitem(compare.RightColumn)) OrElse
-            Not compare.ComparisionMethod.Method.Invoke(leftitem(compare.LeftColumn), rightitem(compare.RightColumn), compare.ComparisionOption) Then
-                errorCols.Add(compare.LeftColumn)
-                'rightitem.RowError = compare.ComparisionMethod.Name
-                If Not IsAll Then Return New Tuple(Of Boolean, List(Of String))(False, errorCols)
-            End If
-        Next
-        Return New Tuple(Of Boolean, List(Of String))(errorCols.Count = 0, errorCols)
-    End Function
+    'Private Function DoCompare(leftitem As Data.DataRow, rightitem As Data.DataRow, comparisions As List(Of Comparision), Optional IsAll As Boolean = True) As Tuple(Of Boolean, List(Of String))
+    '    Dim errorCols As New List(Of String)
+    '    For Each compare In comparisions
+    '        If IsDBNull(leftitem(compare.LeftColumn)) OrElse
+    '        IsDBNull(rightitem(compare.RightColumn)) OrElse
+    '        Not compare.ComparisionMethod.Method.Invoke(leftitem(compare.LeftColumn), rightitem(compare.RightColumn), compare.ComparisionOption) Then
+    '            errorCols.Add(compare.LeftColumn)
+    '            'rightitem.RowError = compare.ComparisionMethod.Name
+    '            If Not IsAll Then Return New Tuple(Of Boolean, List(Of String))(False, errorCols)
+    '        End If
+    '    Next
+    '    Return New Tuple(Of Boolean, List(Of String))(errorCols.Count = 0, errorCols)
+    'End Function
 
 
     Private Sub InsertRow(leftitem As Data.DataRow, rightitem As Data.DataRow, comparisions As List(Of Comparision), isMatch As Boolean, Optional errorCols As List(Of String) = Nothing)

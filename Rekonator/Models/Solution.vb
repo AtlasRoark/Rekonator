@@ -51,11 +51,11 @@ Public Class Solution
     Public Shared Sub SaveSolution(fileName As String, solution As Solution)
         ' Save an instance of the type and serialize it.
         'Delegates can't be saved/restored.  remove them
-        For Each r As Reconciliation In solution.Reconciliations
-            For Each c As Comparision In r.CompletenessComparisions.Union(r.MatchingComparisions)
-                c.ComparisionMethod.Method = Nothing
-            Next
-        Next
+        'For Each r As Reconciliation In solution.Reconciliations
+        '    For Each c As Comparision In r.CompletenessComparisions.Union(r.MatchingComparisions)
+        '        c.ComparisionMethod.Method = Nothing
+        '    Next
+        'Next
         Dim fs As New FileStream(fileName, FileMode.Create)
         Dim formatter As IFormatter = New BinaryFormatter()
         formatter.Serialize(fs, solution)
@@ -65,11 +65,11 @@ Public Class Solution
         Dim fs As New FileStream(fileName, FileMode.Open)
         Dim formatter As IFormatter = New BinaryFormatter()
         Dim loadedSolution As Solution = DirectCast(formatter.Deserialize(fs), Solution)
-        For Each r In loadedSolution.Reconciliations
-            For Each c As Comparision In r.CompletenessComparisions.Union(r.MatchingComparisions)
-                c.ComparisionMethod = CompareMethod.GetMethod(c.ComparisionMethod.Name)
-            Next
-        Next
+        'For Each r In loadedSolution.Reconciliations
+        '    For Each c As Comparision In r.CompletenessComparisions.Union(r.MatchingComparisions)
+        '        c.ComparisionMethod = CompareMethod.GetMethod(c.ComparisionMethod.Name)
+        '    Next
+        'Next
     End Function
 End Class
 

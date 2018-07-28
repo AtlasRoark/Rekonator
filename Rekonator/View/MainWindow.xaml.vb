@@ -19,6 +19,7 @@ Partial Class MainWindow
     Private _rightDetails As New DataTable
     Private _differ As New DataTable
     Private _match As New DataTable
+    Private _isControlPressed As Boolean = False
 
 #Region "-- Notify Property Change --"
     Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
@@ -160,6 +161,18 @@ Partial Class MainWindow
 
         If _left.Rows.Count = 0 Or _right.Rows.Count = 0 Then Exit Sub
 
+
+        Using sql As New SQL
+            Dim recon As Reconciliation = _solution.Reconciliations(0)
+            _match = sql.GetDataTable(Reconciliation.GetMatchSelect(recon))
+            MatchSet = _match.AsDataView
+            _differ = sql.GetDataTable(Reconciliation.GetDifferSelect(recon))
+            DifferSet = _match.AsDataView
+            _left = sql.GetDataTable(Reconciliation.GetLeftSelect(recon))
+            LeftSet = _left.AsDataView
+            _right = sql.GetDataTable(Reconciliation.GetRightSelect(recon))
+            RightSet = _right.AsDataView
+        End Using
         'DoAggregation()
         'Do
         '    Debug.Print(_left.Rows.Count.ToString)
@@ -169,10 +182,6 @@ Partial Class MainWindow
         '    _right.Rows.Remove(remove.Item2)
         'Loop
 
-        LeftSet = _left.AsDataView
-        RightSet = _right.AsDataView
-        DifferSet = _differ.AsDataView
-        MatchSet = _match.AsDataView
     End Sub
 
     Private Sub DoAggregation()
@@ -221,91 +230,70 @@ Partial Class MainWindow
     End Sub
 
 
-    Private Function Reconcile() As Tuple(Of Data.DataRow, Data.DataRow)
-        For Each leftitem In _left.AsEnumerable
-            For Each rightitem In _right.AsEnumerable
-                Dim matchingResult = DoCompare(leftitem, rightitem, _matchingComparisions)
-                If matchingResult.Item1 = True Then
-                    InsertRow(leftitem, rightitem, _matchingComparisions, True)
-                    Return New Tuple(Of Data.DataRow, Data.DataRow)(leftitem, rightitem)
-                Else
-                    Dim completenessResult = DoCompare(leftitem, rightitem, _completenessComparisions)
-                    If completenessResult.Item1 Then  'ids match but not complete match
-                        InsertRow(leftitem, rightitem, _matchingComparisions, False, matchingResult.Item2)
-                        Return New Tuple(Of Data.DataRow, Data.DataRow)(leftitem, rightitem)
-                    End If
-                End If
-            Next
-        Next
-        Return Nothing
-    End Function
-
-    Private Function ReconcileX() As Tuple(Of Data.DataRow, Data.DataRow)
-        Parallel.ForEach(_left.AsEnumerable,
-                         Sub(leftitem)
-                             Parallel.ForEach(_right.AsEnumerable,
-                                              Function(rightitem)
-                                                  Dim matchingResult = DoCompare(leftitem, rightitem, _matchingComparisions)
-                                                  If matchingResult.Item1 = True Then
-                                                      InsertRow(leftitem, rightitem, _matchingComparisions, True)
-                                                      Return New Tuple(Of Data.DataRow, Data.DataRow)(leftitem, rightitem)
-                                                      Exit Function
-                                                  Else
-                                                      Dim completenessResult = DoCompare(leftitem, rightitem, _completenessComparisions)
-                                                      If completenessResult.Item1 Then  'ids match but not complete match
-                                                          InsertRow(leftitem, rightitem, _matchingComparisions, False, matchingResult.Item2)
-                                                          Return New Tuple(Of Data.DataRow, Data.DataRow)(leftitem, rightitem)
-                                                      End If
-                                                  End If
-                                              End Function)
-                         End Sub)
-        Return Nothing
-    End Function
-
-    Private Function DoCompare(leftitem As Data.DataRow, rightitem As Data.DataRow, comparisions As List(Of Comparision), Optional IsAll As Boolean = True) As Tuple(Of Boolean, List(Of String))
-        Dim errorCols As New List(Of String)
-        For Each compare In comparisions
-            If IsDBNull(leftitem(compare.LeftColumn)) OrElse
-            IsDBNull(rightitem(compare.RightColumn)) OrElse
-            Not compare.ComparisionMethod.Method.Invoke(leftitem(compare.LeftColumn), rightitem(compare.RightColumn), compare.ComparisionOption) Then
-                errorCols.Add(compare.LeftColumn)
-                'rightitem.RowError = compare.ComparisionMethod.Name
-                If Not IsAll Then Return New Tuple(Of Boolean, List(Of String))(False, errorCols)
-            End If
-        Next
-        Return New Tuple(Of Boolean, List(Of String))(errorCols.Count = 0, errorCols)
-    End Function
+    'Private Function Reconcile() As Tuple(Of Data.DataRow, Data.DataRow)
+    '    For Each leftitem In _left.AsEnumerable
+    '        For Each rightitem In _right.AsEnumerable
+    '            Dim matchingResult = DoCompare(leftitem, rightitem, _matchingComparisions)
+    '            If matchingResult.Item1 = True Then
+    '                InsertRow(leftitem, rightitem, _matchingComparisions, True)
+    '                Return New Tuple(Of Data.DataRow, Data.DataRow)(leftitem, rightitem)
+    '            Else
+    '                Dim completenessResult = DoCompare(leftitem, rightitem, _completenessComparisions)
+    '                If completenessResult.Item1 Then  'ids match but not complete match
+    '                    InsertRow(leftitem, rightitem, _matchingComparisions, False, matchingResult.Item2)
+    '                    Return New Tuple(Of Data.DataRow, Data.DataRow)(leftitem, rightitem)
+    '                End If
+    '            End If
+    '        Next
+    '    Next
+    '    Return Nothing
+    'End Function
 
 
-    Private Sub InsertRow(leftitem As Data.DataRow, rightitem As Data.DataRow, comparisions As List(Of Comparision), isMatch As Boolean, Optional errorCols As List(Of String) = Nothing)
-        Dim currentTable As DataTable = IIf(isMatch, _match, _differ)
-        If currentTable.Rows.Count = 0 Then
-            Dim colHeaders As DataColumn() = (From c As Comparision In comparisions
-                                              Select New DataColumn With {
-                                  .ColumnName = c.LeftColumn + ":" + c.RightColumn,
-                                  .DataType = IIf(isMatch, _left.Columns(c.LeftColumn).DataType, GetType(String))
-                                  }
-                             ).Distinct(New ColNameComparer).ToArray
-            currentTable.Columns.AddRange(colHeaders)
-        End If
+    'Private Function DoCompare(leftitem As Data.DataRow, rightitem As Data.DataRow, comparisions As List(Of Comparision), Optional IsAll As Boolean = True) As Tuple(Of Boolean, List(Of String))
+    '    Dim errorCols As New List(Of String)
+    '    For Each compare In comparisions
+    '        If IsDBNull(leftitem(compare.LeftColumn)) OrElse
+    '        IsDBNull(rightitem(compare.RightColumn)) OrElse
+    '        Not compare.ComparisionMethod.Method.Invoke(leftitem(compare.LeftColumn), rightitem(compare.RightColumn), compare.ComparisionOption) Then
+    '            errorCols.Add(compare.LeftColumn)
+    '            'rightitem.RowError = compare.ComparisionMethod.Name
+    '            If Not IsAll Then Return New Tuple(Of Boolean, List(Of String))(False, errorCols)
+    '        End If
+    '    Next
+    '    Return New Tuple(Of Boolean, List(Of String))(errorCols.Count = 0, errorCols)
+    'End Function
 
-        currentTable.Rows.Add(comparisions.Select(Function(s)
-                                                      If isMatch Then
-                                                          Return leftitem(s.LeftColumn)
-                                                      Else
-                                                          If errorCols Is Nothing Then
-                                                              Return leftitem(s.LeftColumn)
-                                                          Else
-                                                              If errorCols.Contains(s.LeftColumn) Then
-                                                                  Return leftitem(s.LeftColumn).ToString + "<>" + rightitem(s.RightColumn).ToString
-                                                              Else
-                                                                  Return leftitem(s.LeftColumn)
-                                                              End If
-                                                          End If
-                                                      End If
-                                                  End Function).ToArray)
 
-    End Sub
+    'Private Sub InsertRow(leftitem As Data.DataRow, rightitem As Data.DataRow, comparisions As List(Of Comparision), isMatch As Boolean, Optional errorCols As List(Of String) = Nothing)
+    '    Dim currentTable As DataTable = IIf(isMatch, _match, _differ)
+    '    If currentTable.Rows.Count = 0 Then
+    '        Dim colHeaders As DataColumn() = (From c As Comparision In comparisions
+    '                                          Select New DataColumn With {
+    '                              .ColumnName = c.LeftColumn + ":" + c.RightColumn,
+    '                              .DataType = IIf(isMatch, _left.Columns(c.LeftColumn).DataType, GetType(String))
+    '                              }
+    '                         ).Distinct(New ColNameComparer).ToArray
+    '        currentTable.Columns.AddRange(colHeaders)
+    '    End If
+
+    '    currentTable.Rows.Add(comparisions.Select(Function(s)
+    '                                                  If isMatch Then
+    '                                                      Return leftitem(s.LeftColumn)
+    '                                                  Else
+    '                                                      If errorCols Is Nothing Then
+    '                                                          Return leftitem(s.LeftColumn)
+    '                                                      Else
+    '                                                          If errorCols.Contains(s.LeftColumn) Then
+    '                                                              Return leftitem(s.LeftColumn).ToString + "<>" + rightitem(s.RightColumn).ToString
+    '                                                          Else
+    '                                                              Return leftitem(s.LeftColumn)
+    '                                                          End If
+    '                                                      End If
+    '                                                  End If
+    '                                              End Function).ToArray)
+
+    'End Sub
 
     Private Sub btnLoad_Click(sender As Object, e As RoutedEventArgs)
         Dim qbfc As New GetQBFC
@@ -314,83 +302,87 @@ Partial Class MainWindow
     End Sub
 
     Private Sub btnMatch_Click(sender As Object, e As RoutedEventArgs)
-        Task.Factory.StartNew(Sub() Configure("Test 1"))
+        Task.Factory.StartNew(Sub() Configure("Huber"))
         MessageLog.Clear()
     End Sub
 
     Private Function Configure(testName As String) As Task(Of Object)
 
+        Dim leftRS As ReconSource = Nothing
+        Dim rightRS As ReconSource = Nothing
+        Select Case testName
+            Case "Test 1"
 
-        'Test Agg
-        '_filters.Add(New Filter With {.DataSourceName = "", .FilterColumns = {"Balance"}, .FilterOption = .FilterOption.NonBlankOrZero})
-        'Dim aggOps As New List(Of AggregateOperation)
-        'aggOps.Add(New AggregateOperation With {.SourceColumn = "Entry", .AggregateColumn = "EntryTotal", .Operation = AggregateOperation.AggregateFunction.Sum})
-        'aggOps.Add(New AggregateOperation With {.SourceColumn = "Entry", .AggregateColumn = "EntryAvg", .Operation = AggregateOperation.AggregateFunction.Avg})
-        'aggOps.Add(New AggregateOperation With {.SourceColumn = "Entry", .AggregateColumn = "EntryCount", .Operation = AggregateOperation.AggregateFunction.Count})
-        '_aggregates.Add(New Aggregate With {.DataSourceName = "", .GroupByCoumns = {"Customer ID"}, .AggregateOperations = aggOps})
-        '_completenessComparisions.Add(New Comparision With {.LeftColumn = "Customer ID", .RightColumn = "GroupKey", .ComparisionOption = 1, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
-        '_matchingComparisions.Add(New Comparision With {.LeftColumn = "Balance", .RightColumn = "EntryTotal", .ComparisionOption = 2, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
-        '_matchingComparisions.Add(New Comparision With {.LeftColumn = "Count", .RightColumn = "EntryCount", .ComparisionOption = 0, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
-        '_matchingComparisions.Add(New Comparision With {.LeftColumn = "Avg", .RightColumn = "EntryAvg", .ComparisionOption = 9, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
-        'Using ge As New GetExcel
-        '    _left = ge.GetList("C:\Users\Peter Grillo\source\repos\Test.xlsx", "Agg Balance")
-        '    _right = ge.GetList("C:\Users\Peter Grillo\source\repos\Test.xlsx", "Agg Entries")
-        'End Using
+                'Test 1
+                Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
+                Dim excelParam As New Dictionary(Of String, String)
+                excelParam.Add("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
+                excelParam.Add("Worksheet", "ST Items")
+                leftRS = New ReconSource With
+                    {.ReconDataSource = excelDS,
+                    .ReconTable = "aset",
+                    .IsLoaded = False,
+                    .Parameters = excelParam}
 
-        'Test 1
-        Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
-        Dim excelParam As New Dictionary(Of String, String)
-        excelParam.Add("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
-        excelParam.Add("Worksheet", "ST Items")
-        Dim leftRS As New ReconSource With
-            {.ReconDataSource = excelDS,
-            .ReconTable = "aset",
-            .IsLoaded = False,
-            .Parameters = excelParam}
+                excelParam = New Dictionary(Of String, String)
+                excelParam.Add("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
+                excelParam("Worksheet") = "Item"
+                rightRS = New ReconSource With
+                    {.ReconDataSource = excelDS,
+                    .ReconTable = "bset",
+                    .IsLoaded = False,
+                    .Parameters = excelParam}
 
-        excelParam = New Dictionary(Of String, String)
-        excelParam.Add("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
-        excelParam("Worksheet") = "Item"
-        Dim rightRS As New ReconSource With
-            {.ReconDataSource = excelDS,
-            .ReconTable = "bset",
-            .IsLoaded = False,
-            .Parameters = excelParam}
+                _completenessComparisions.Add(New Comparision With {.LeftColumn = "ST Export ID", .RightColumn = "Item ID", .ComparisionTest = ComparisionType.TextCaseEquals})
+                '_matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Export ID", .RightColumn = "Item ID", .ComparisionTest = ComparisionType.TextCaseEquals})
+                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Name", .RightColumn = "Item Name", .ComparisionTest = ComparisionType.TextEquals})
+                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Qty", .RightColumn = "Item Qty", .Percision = 4, .ComparisionTest = ComparisionType.NumberEquals})
+                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Price", .RightColumn = "Item Price", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
+                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Reorder", .RightColumn = "Item Reorder", .ComparisionTest = ComparisionType.NumberEquals})
+                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Service Date", .RightColumn = "Service Date", .ComparisionTest = ComparisionType.DateEquals})
+                Reconciliation.Add("Test Set", leftRS, rightRS, _completenessComparisions, _matchingComparisions)
+            Case "Huber"
+                Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
+                Dim excelParam As New Dictionary(Of String, String)
+                excelParam.Add("FilePath", "C:\Users\Peter Grillo\Downloads\March Activity.xls")
+                excelParam.Add("Worksheet", "ST Inv")
+                leftRS = New ReconSource With
+                    {.ReconDataSource = excelDS,
+                    .ReconTable = "stinvoice",
+                    .IsLoaded = True,
+                    .Parameters = excelParam,
+                    .Where = "NOT (ISNULL(x!.[ExportId], '')='' OR x!.[ExportId]='0')"}
 
-        _completenessComparisions.Add(New Comparision With {.LeftColumn = "ST Export ID", .RightColumn = "Item ID", .ComparisionOption = 1, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
-        _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Export ID", .RightColumn = "Item ID", .ComparisionOption = 1, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
-        _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Name", .RightColumn = "Item Name", .ComparisionOption = 0, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
-        _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Qty", .RightColumn = "Item Qty", .ComparisionOption = 4, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
-        _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Price", .RightColumn = "Item Price", .ComparisionOption = 2, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
-        _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Reorder", .RightColumn = "Item Reorder", .ComparisionOption = 1, .ComparisionMethod = CompareMethod.GetMethod("Integer Equals")})
-        _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Service Date", .RightColumn = "Service Date", .ComparisionOption = 0, .ComparisionMethod = CompareMethod.GetMethod("Date Equals")})
-        Reconciliation.Add("Test Set", leftRS, rightRS, _completenessComparisions, _matchingComparisions)
+                excelParam = New Dictionary(Of String, String)
+                excelParam.Add("FilePath", "C:\Users\Peter Grillo\Downloads\March Activity.xls")
+                excelParam("Worksheet") = "Mar Inv"
+                rightRS = New ReconSource With
+                    {.ReconDataSource = excelDS,
+                    .ReconTable = "qbinvoice",
+                    .IsLoaded = True,
+                    .Parameters = excelParam,
+                    .Where = "NOT (ISNULL(x!.[SubTotal], '')='' OR x!.[SubTotal]='0')"}
 
-        'Test Huber
-        'Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
-        'Dim excelParam As New Dictionary(Of String, String)
-        'excelParam.Add("FilePath", "C:\Users\Peter Grillo\Downloads\March Activity.xls")
-        'excelParam.Add("Worksheet", "ST Inv")
-        'Dim leftRS As New ReconSource With
-        '    {.ReconDataSource = excelDS,
-        '    .ReconTable = "stinvoice",
-        '    .IsLoaded = True,
-        '    .Parameters = excelParam,
-        '    .Where = "NOT (ISNULL([ExportId], '')='' OR [ExportId]='0')"}
+                _completenessComparisions.Add(New Comparision With {.LeftColumn = "QB Export ID", .RightColumn = "TxnId", .ComparisionTest = ComparisionType.TextCaseEquals})
+                _matchingComparisions.Add(New Comparision With {.LeftColumn = "Total", .RightColumn = "Subtotal", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
+                Reconciliation.Add("March Invoices", leftRS, rightRS, _completenessComparisions, _matchingComparisions)
 
-        'excelParam = Dictionary(Of String, String)
-        'excelParam.Add("FilePath", "C:\Users\Peter Grillo\Downloads\March Activity.xls")
-        'excelParam("Worksheet") = "Mar Inv"
-        'Dim rightRS As New ReconSource With
-        '    {.ReconDataSource = excelDS,
-        '    .ReconTable = "qbinvoice",
-        '    .IsLoaded = True,
-        '    .Parameters = excelParam,
-        '    .Where = "NOT (ISNULL([SubTotal], '')='' OR [SubTotal]='0')"}
-
-        '_completenessComparisions.Add(New Comparision With {.LeftColumn = "QB Export ID", .RightColumn = "TxnId", .ComparisionOption = 0, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
-        '_matchingComparisions.Add(New Comparision With {.LeftColumn = "Total", .RightColumn = "Subtotal", .ComparisionOption = 2, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
-        'Reconciliation.Add("March Invoices", leftRS, rightRS, _completenessComparisions, _matchingComparisions)
+                'Test Agg
+                '_filters.Add(New Filter With {.DataSourceName = "", .FilterColumns = {"Balance"}, .FilterOption = .FilterOption.NonBlankOrZero})
+                'Dim aggOps As New List(Of AggregateOperation)
+                'aggOps.Add(New AggregateOperation With {.SourceColumn = "Entry", .AggregateColumn = "EntryTotal", .Operation = AggregateOperation.AggregateFunction.Sum})
+                'aggOps.Add(New AggregateOperation With {.SourceColumn = "Entry", .AggregateColumn = "EntryAvg", .Operation = AggregateOperation.AggregateFunction.Avg})
+                'aggOps.Add(New AggregateOperation With {.SourceColumn = "Entry", .AggregateColumn = "EntryCount", .Operation = AggregateOperation.AggregateFunction.Count})
+                '_aggregates.Add(New Aggregate With {.DataSourceName = "", .GroupByCoumns = {"Customer ID"}, .AggregateOperations = aggOps})
+                '_completenessComparisions.Add(New Comparision With {.LeftColumn = "Customer ID", .RightColumn = "GroupKey", .ComparisionOption = 1, .ComparisionMethod = CompareMethod.GetMethod("String Equals")})
+                '_matchingComparisions.Add(New Comparision With {.LeftColumn = "Balance", .RightColumn = "EntryTotal", .ComparisionOption = 2, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
+                '_matchingComparisions.Add(New Comparision With {.LeftColumn = "Count", .RightColumn = "EntryCount", .ComparisionOption = 0, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
+                '_matchingComparisions.Add(New Comparision With {.LeftColumn = "Avg", .RightColumn = "EntryAvg", .ComparisionOption = 9, .ComparisionMethod = CompareMethod.GetMethod("Single Equals")})
+                'Using ge As New GetExcel
+                '    _left = ge.GetList("C:\Users\Peter Grillo\source\repos\Test.xlsx", "Agg Balance")
+                '    _right = ge.GetList("C:\Users\Peter Grillo\source\repos\Test.xlsx", "Agg Entries")
+                'End Using
+        End Select
 
         _solution = New Solution With {.SolutionName = testName, .Reconciliations = Reconciliation.Reconciliations}
         If Not leftRS.IsLoaded Then
@@ -410,10 +402,10 @@ Partial Class MainWindow
         Using sql As New SQL
             Dim rs As ReconSource = _solution.Reconciliations(0).LeftReconSource
             _left = sql.GetDataTable(ReconSource.GetSelect(rs))
-            OnPropertyChanged("LeftSet")
+            LeftSet = _left.AsDataView
             rs = _solution.Reconciliations(0).RightReconSource
             _right = sql.GetDataTable(ReconSource.GetSelect(rs))
-            OnPropertyChanged("RightSet")
+            RightSet = _right.AsDataView
         End Using
 
 
@@ -428,11 +420,21 @@ Partial Class MainWindow
         lbMessageLog.ScrollIntoView(lbMessageLog.SelectedItem)
     End Sub
 
+    Private Sub DataGridCell_PreviewKeyDown(sender As Object, e As KeyEventArgs)
+
+        Dim cell As DataGridCell = TryCast(sender, DataGridCell)
+
+        If e.Key = Key.LeftCtrl OrElse e.Key = Key.RightCtrl Then
+            _isControlPressed = True
+        End If
+
+        If _isControlPressed AndAlso e.Key = Key.C Then
+            If TypeOf cell.Content Is TextBlock Then Clipboard.SetText((TryCast(cell.Content, TextBlock)).Text)
+            _isControlPressed = False
+            e.Handled = True
+        End If
+    End Sub
 End Class
 
-Public Class MessageEntry
-    Property IsError As Boolean
-    Property MessageText As String
-End Class
 
 

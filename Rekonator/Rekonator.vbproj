@@ -70,6 +70,7 @@
     <Compile Include="GetExcel.vb" />
     <Compile Include="GetQBFC.vb" />
     <Compile Include="IReconCompare.vb" />
+    <Compile Include="Models\MessageEntry.vb" />
     <Compile Include="SQL.vb" />
     <Compile Include="View\DataSourcePage.xaml.vb">
       <DependentUpon>DataSourcePage.xaml</DependentUpon>

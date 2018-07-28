@@ -11,9 +11,9 @@ Public Class ReconSource
     Property Aggregations As List(Of Aggregate)
 
     Public Shared Function GetSelect(reconSource As ReconSource) As String
-        Dim selectCommand As String = $"SELECT * FROM {reconSource.ReconTable}"
+        Dim selectCommand As String = $"SELECT * FROM {reconSource.ReconTable} x"
         If Not String.IsNullOrWhiteSpace(reconSource.Where) Then
-            selectCommand += $" WHERE {reconSource.Where}"
+            selectCommand += $" WHERE {reconSource.Where.Replace("x!.", "x.")}"
         End If
         Return selectCommand
     End Function
