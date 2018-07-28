@@ -1,0 +1,270 @@
+﻿<controls:MetroWindow x:Class="MainWindow"
+                      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                      xmlns:local="clr-namespace:Rekonator"
+                      xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
+                      GlowBrush="{DynamicResource AccentColorBrush}"
+                      BorderThickness="1"
+                      TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+                      TextElement.FontWeight="Regular"
+                      TextElement.FontSize="13"
+                      TextOptions.TextFormattingMode="Ideal"
+                      TextOptions.TextRenderingMode="Auto"
+                      Background="{DynamicResource AccentColorBrush4}"
+                      FontFamily="{DynamicResource MaterialDesignFont}"
+                      mc:Ignorable="d"
+                      WindowState="Maximized"
+                      WindowStyle="ThreeDBorderWindow">
+    <!--Background="{StaticResource MaterialDesignPaper}"-->
+
+    <Window.Resources>
+        <local:ValueToBrushConverter x:Key="ValueToBrushConverter" />
+
+        <Style x:Key="ReconGrid"
+               TargetType="{x:Type DataGrid}"
+               BasedOn="{StaticResource {x:Type DataGrid}}">
+            <Setter Property="IsReadOnly"
+                    Value="True" />
+            <Setter Property="AutoGenerateColumns"
+                    Value="True" />
+            <!--<Setter Property="AlternatingRowBackground"
+                    Value="LightBlue" />-->
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource HighlightBrush}" />
+            <Setter Property="BorderThickness"
+                    Value="3" />
+            <Setter Property="Margin"
+                    Value="3" />
+            <!--<Setter Property="HorizontalScrollBarVisibility"
+                    Value="Auto" />
+            <Setter Property="VerticalScrollBarVisibility"
+                    Value="Auto" />-->
+            <!--<Setter Property="VerticalContentAlignment"
+                    Value="Center" />-->
+            <!--<Setter Property="RowStyle">
+                <Setter.Value>
+                    <Style  TargetType="{x:Type DataGridRow}">
+                        <Setter Property ="Height" 
+                                Value="32" />
+                    </Style>
+                </Setter.Value>
+            </Setter>-->
+        </Style>
+
+    </Window.Resources>
+
+    <controls:MetroWindow.LeftWindowCommands>
+        <controls:WindowCommands>
+
+            <Button Name="btnOpenFile"
+                    Click="btnOpenFile_Click"
+                    ToolTip="Open File">
+                <Rectangle Width="22"
+                           Height="22"
+                           Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}">
+                    <Rectangle.OpacityMask>
+                        <VisualBrush Stretch="Uniform"
+                                     Visual="{StaticResource appbar_folder_open}" />
+                    </Rectangle.OpacityMask>
+                </Rectangle>
+            </Button>
+            <Button Name="btnSaveFile"
+                    Click="btnSaveFile_Click"
+                    ToolTip="Save File">
+                <Rectangle Width="22"
+                           Height="22"
+                           Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}">
+                    <Rectangle.OpacityMask>
+                        <VisualBrush Stretch="Uniform"
+                                     Visual="{StaticResource appbar_save}" />
+                    </Rectangle.OpacityMask>
+                </Rectangle>
+            </Button>
+            <TextBlock Name="tbTitle"
+                       Text="Rekonator"
+                       Style="{DynamicResource MaterialDesignTitleTextBlock}" />
+        </controls:WindowCommands>
+    </controls:MetroWindow.LeftWindowCommands>
+
+    <controls:MetroWindow.Flyouts>
+        <controls:FlyoutsControl>
+            <controls:Flyout x:Name="LeftFlyout"
+                             Header="Left Data"
+                             Position="Left"
+                             IsAutoCloseEnabled="True"
+                             Width="400">
+                <local:DataSourcePage />
+            </controls:Flyout>
+            <controls:Flyout x:Name="RightFlyout" 
+                             Header="Right Data"
+                             Position="Right"
+                             IsAutoCloseEnabled="True"
+                             Width="400">
+                <local:DataSourcePage />
+            </controls:Flyout>
+            <controls:Flyout x:Name="BottomFlyout"
+                             Header="Messages"
+                             Position="Bottom"
+                             IsAutoCloseEnabled="True"
+                             Width="800" Height="400">
+                <ListBox x:Name="lbMessageLog" ItemsSource="{Binding MessageLog}" DisplayMemberPath="MessageText" />
+
+            </controls:Flyout>
+
+        </controls:FlyoutsControl>
+    </controls:MetroWindow.Flyouts>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="3*" />
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="28" />
+            <RowDefinition Height="3*" />
+            <RowDefinition Height="28" />
+            <RowDefinition Height="1*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0"
+                    Grid.Column="0">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center">
+                <TextBlock Text="Left"
+                           Margin="0,0,5,0"
+                           Style="{DynamicResource MaterialDesignTitleTextBlock}" />
+                <ToggleButton IsChecked="{Binding ElementName=LeftFlyout, Path=IsOpen}"
+                              Cursor="Hand">
+                </ToggleButton>
+            </StackPanel>
+        </StackPanel>
+        <!--<TextBlock Text="Left"
+                           Style="{DynamicResource MaterialDesignTitleTextBlock}"
+                           HorizontalAlignment="Center" />-->
+        <DataGrid Grid.Row="1"
+                  Grid.RowSpan="3"
+                  Grid.Column="0"
+                  x:Name="dgLeft"
+                  ItemsSource="{Binding LeftSet}"
+                  Style="{StaticResource ReconGrid}">
+        </DataGrid>
+
+        <!--ActiveLayoutIndex="{Binding ElementName=layoutCombo, Path=SelectedIndex}"
+                          ActiveLayoutChanged="OnSwitchPanelLayoutChanged"-->
+        <StackPanel Grid.Row="0"
+                    Grid.Column="2">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center">
+                <TextBlock Text="Right"
+                           Margin="0,0,5,0"
+                           Style="{DynamicResource MaterialDesignTitleTextBlock}" />
+                <ToggleButton IsChecked="{Binding ElementName=RightFlyout, Path=IsOpen}"
+                              Cursor="Hand">
+
+                </ToggleButton>
+            </StackPanel>
+        </StackPanel>
+        <DataGrid x:Name="dgRight"
+                  Grid.Row="1"
+                  Grid.RowSpan="3"
+                  Grid.Column="2"
+                  ItemsSource="{Binding RightSet}"
+                  Style="{StaticResource ReconGrid}">
+        </DataGrid>
+
+
+
+        <StackPanel Grid.Row="0"
+                    Grid.Column="1">
+            <TextBlock Text="Differ"
+                       Style="{DynamicResource MaterialDesignTitleTextBlock}"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+        <DataGrid x:Name="dgDiffer"
+                  Grid.Row="1"
+                  Grid.Column="1"
+                  ItemsSource="{Binding DifferSet}"
+                  Style="{StaticResource ReconGrid}">
+
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell"
+                       BasedOn="{StaticResource {x:Type DataGridCell}}">
+                    <Setter Property="Background"
+                            Value="{Binding RelativeSource={RelativeSource Self}, Path=Content.Text, Converter={StaticResource ValueToBrushConverter}}" />
+                </Style>
+            </DataGrid.CellStyle>
+        </DataGrid >
+
+
+        <StackPanel Grid.Row="2"
+                    Grid.Column="1">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Content="Match"
+                        Name="btnMatch"
+                        HorizontalAlignment="Center"
+                        Click="btnMatch_Click" />
+                <ToggleButton IsChecked="{Binding ElementName=BottomFlyout, Path=IsOpen}"
+                              Cursor="Hand" Margin="5,0,0,0">
+                </ToggleButton>
+            </StackPanel>
+        </StackPanel>
+        <DataGrid x:Name="dgMatch"
+                  Grid.Row="3"
+                  Grid.Column="1"
+                  ItemsSource="{Binding MatchSet}"
+                  Style="{StaticResource ReconGrid}">
+            <!--Empty CellStyle has the effect of making the rowheight the same as differ, for some reason-->
+            <!--<DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                    </Style>
+                </DataGrid.CellStyle>-->
+        </DataGrid>
+
+
+
+        <!--<StackPanel DockPanel.Dock="Bottom"
+                    Orientation="Horizontal">
+            <ComboBox Text="Reconcile">
+                <ComboBoxItem>Items</ComboBoxItem>
+                <ComboBoxItem>Purchase Orders</ComboBoxItem>
+            </ComboBox>
+            <DatePicker Text="From Date" />
+            <DatePicker Text="To Date" />
+            <Button Name="btnRecon" Content="Reconate It"
+                    HorizontalAlignment="Right"
+                    Click="btnRecon_Click"/>
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Left" HorizontalAlignment="Center">
+            <TextBlock Text="ServiceTitan" />
+            <DataGrid Name="dgLeft"
+                      ItemsSource="{Binding LeftSet}"
+                      AutoGenerateColumns="True" />
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Right">
+            <TextBlock Text="QuickBooks" />
+            <DataGrid Name="dgRight"
+                      ItemsSource="{Binding RightSet}"
+                      AutoGenerateColumns="True" />
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="No Match" />
+            <DataGrid Name="dgDiffer"
+                      ItemsSource="{Binding DifferSet}"
+                      AutoGenerateColumns="True"/>
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="Match" />
+            <DataGrid Name="dgMatch"
+                      ItemsSource="{Binding MatchSet}"
+                      AutoGenerateColumns="True"/>
+        </StackPanel>-->
+
+    </Grid>
+</controls:MetroWindow>
