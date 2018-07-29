@@ -7,6 +7,8 @@ Public Class Reconciliation
     Property RightReconSource As ReconSource
     Property CompletenessComparisions As List(Of Comparision)
     Property MatchingComparisions As List(Of Comparision)
+    Property FromDate As DateTime = DateTime.MinValue
+    Property ToDate As DateTime = DateTime.MinValue
 
     Private Shared _sb As New StringBuilder
 
@@ -15,13 +17,17 @@ Public Class Reconciliation
                           leftDataSource As ReconSource,
                           rightDataSource As ReconSource,
                           completenessComparision As List(Of Comparision),
-                          matchingComparision As List(Of Comparision))
+                          matchingComparision As List(Of Comparision),
+                          Optional fromDate As DateTime = Nothing,
+                          Optional toDate As DateTime = Nothing)
         Reconciliations.Add(New Reconciliation With {
                             .ReconciliationName = reconciliationName,
                             .LeftReconSource = leftDataSource,
                             .RightReconSource = rightDataSource,
                             .CompletenessComparisions = completenessComparision,
-                            .MatchingComparisions = matchingComparision}
+                            .MatchingComparisions = matchingComparision,
+                            .FromDate = fromDate,
+                            .ToDate = toDate}
                             )
     End Sub
     Public Shared Function GetReconciliation(reconciliationName As String) As Reconciliation

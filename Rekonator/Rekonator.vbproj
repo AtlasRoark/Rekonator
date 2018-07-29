@@ -67,15 +67,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="GetExcel.vb" />
-    <Compile Include="GetQBFC.vb" />
+    <Compile Include="Get\GetExcel.vb" />
+    <Compile Include="Get\GetQBD.vb" />
     <Compile Include="IReconCompare.vb" />
     <Compile Include="Models\MessageEntry.vb" />
     <Compile Include="SQL.vb" />
     <Compile Include="View\DataSourcePage.xaml.vb">
       <DependentUpon>DataSourcePage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="View\GetSQL.vb" />
+    <Compile Include="Get\GetSQL.vb" />
     <Compile Include="View\MainWindow.xaml.vb">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>

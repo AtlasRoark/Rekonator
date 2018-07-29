@@ -15,6 +15,12 @@ Public Class SQL
     Private _CurrencyKeywords() As String = {"amount", "total", "payment", "subtotal", "debit", "credit", "balance", "amt", "price", "cost", "$"}
     Private _IntegerKeywords() As String = {"id", "#", "status", "No", "Num"}
 
+    Public ReadOnly Property Connection As SqlConnection
+        Get
+            Connection = _connection
+        End Get
+    End Property
+
     Public Sub New()
         OpenConnection()
     End Sub
@@ -54,6 +60,8 @@ Public Class SQL
             For idx = 0 To _fieldCount - 1
                 _sb.Append($"[{_headerList(idx)}]")
                 Select Case _typeList(idx).Name
+                    Case "Int32"
+                        _sb.AppendLine(" INT NULL,")
                     Case "Double"
                         If IsCurrency(_headerList(idx)) Then
                             _sb.AppendLine(" DECIMAL(14,2) NULL,")
@@ -62,6 +70,8 @@ Public Class SQL
                         Else
                             _sb.AppendLine(" DECIMAL(16,6) NULL,")
                         End If
+                    Case "Date"
+                        _sb.AppendLine(" DATE NULL,")
                     Case "DateTime"
                         _sb.AppendLine(" DATETIME NULL,")
                     Case "String"
@@ -81,6 +91,10 @@ Public Class SQL
         End Try
         Return False
     End Function
+    Public Function DropTable(Optional tableName As String = "") As Boolean
+        If String.IsNullOrEmpty(tableName) Then tableName = _reconTable
+        ExecuteNonQuery($"IF(OBJECT_ID('Rekonator..[{tableName}]') IS NOT NULL) DROP TABLE [{tableName}];")
+    End Function
 
     Public Function InsertRow(rowList As List(Of Object)) As Boolean
         Try
@@ -96,7 +110,7 @@ Public Class SQL
                     _sb.AppendLine("Null,")
                 Else
                     Select Case _typeList(idx).Name
-                        Case "Double"
+                        Case "Double", "Int32"
                             _sb.AppendLine($"{rowList(idx)},")
                         Case "DateTime"
                             _sb.AppendLine($"'{CDate(rowList(idx)).ToString("yyyy-MM-dd hh:mm:ss")}',")
@@ -114,6 +128,19 @@ Public Class SQL
             Application.ErrorMessage($"Error Inserting Row {_reconTable} Row {_rowNumber}: {ex.Message}")
         End Try
         Return False
+    End Function
+
+    Public Function ExecuteNonQuery(execCommand As String) As Integer
+        Try
+            Dim command As New SqlCommand(execCommand, _connection)
+            Return command.ExecuteNonQuery()
+        Catch ex As Exception
+            Application.ErrorMessage($"Error Executing Non Query {execCommand}: {ex.Message}")
+        End Try
+    End Function
+
+    Friend Function GetFromCommandPath(commandPath As String) As String
+        Return My.Computer.FileSystem.ReadAllText(commandPath, Encoding.UTF8)
     End Function
 
     Private Sub OpenConnection()

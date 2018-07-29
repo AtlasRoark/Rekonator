@@ -7,25 +7,6 @@ Imports System.Text
 Public Class GetExcel
     Implements IDisposable
 
-    'Private Shared Sub HasRows(ByVal connection As SqlConnection)
-    '    Using connection
-    '        Dim command As SqlCommand = New SqlCommand("SELECT CategoryID, CategoryName FROM Categories;", connection)
-    '        connection.Open()
-    '        Dim reader As SqlDataReader = command.ExecuteReader()
-
-    '        If reader.HasRows Then
-
-    '            While reader.Read()
-    '                Console.WriteLine("{0}" & vbTab & "{1}", reader.GetInt32(0), reader.GetString(1))
-    '            End While
-    '        Else
-    '            Console.WriteLine("No rows found.")
-    '        End If
-
-    '        reader.Close()
-    '    End Using
-    'End Sub
-
     Public Function Load(reconSource As ReconSource) As Boolean
         Dim reconTable As String = reconSource.ReconTable
         Dim filePath As String = reconSource.Parameters("FilePath")

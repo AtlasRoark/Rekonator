@@ -3,16 +3,19 @@ Imports System.Reflection
 Imports Dynamitey.Dynamic
 Imports Interop.QBFC13
 
-Public Class GetQBFC
+Public Class GetQBD
+    Implements IDisposable
 
     Private _sessionManager As QBSessionManager
     Private _msgSetRequest As IMsgSetRequest
     Private _msgSetResponse As IMsgSetResponse
     Private _response As IResponse
-    Private _resultTable As DataTable
+    'Private _resultTable As DataTable
 
+    Private _sql As SQL
+    Private _fieldCount As Integer = 0
 
-    Public Function GetReport(reportName As String) As DataTable
+    Public Function LoadReport(reconSource As ReconSource, fromDate As DateTime, toDate As DateTime) As Boolean
         If Not ConnectToQB() Then Exit Function
 
         Dim msgSetResponse As IMsgSetResponse = Nothing
@@ -24,20 +27,36 @@ Public Class GetQBFC
 
             QReport = _msgSetRequest.AppendGeneralDetailReportQueryRq
             QReport.GeneralDetailReportType.SetValue(ENGeneralDetailReportType.gdrtProfitAndLossDetail)
-            QReport.DisplayReport.SetValue(True)
-            'For Each member As String In GetMemberNames(QReport)
-            '    Debug.Print(member)
-            'Next
-            QReport.ORReportPeriod.ReportDateMacro.SetValue(ENReportDateMacro.rdmLastQuarter)
+            QReport.DisplayReport.SetValue(False)
+            QReport.ReportBasis.SetValue(ENReportBasis.rbAccrual)
+            'QReport.ORReportPeriod.ReportDateMacro.SetValue(ENReportDateMacro.rdmLastQuarter)
 
+            QReport.ORReportPeriod.ReportPeriod.FromReportDate.SetValue(fromDate)
+            QReport.ORReportPeriod.ReportPeriod.ToReportDate.SetValue(toDate)
+            QReport.IncludeColumnList.Add(ENIncludeColumn.icAccount)
+            QReport.IncludeColumnList.Add(ENIncludeColumn.icDate)
+            QReport.IncludeColumnList.Add(ENIncludeColumn.icRefNumber)
+            QReport.IncludeColumnList.Add(ENIncludeColumn.icClass)
+            QReport.IncludeColumnList.Add(ENIncludeColumn.icTxnNumber)
+            QReport.IncludeColumnList.Add(ENIncludeColumn.icAmount)
+            QReport.IncludeColumnList.Add(ENIncludeColumn.icTxnType)
+            QReport.IncludeColumnList.Add(ENIncludeColumn.icTxnID)
+            QReport.ReportAccountFilter.ORReportAccountFilter.AccountTypeFilter.SetValue(ENAccountTypeFilter.atfIncomeAndOtherIncome Or ENAccountTypeFilter.atfExpenseAndOtherExpense)
             _msgSetResponse = _sessionManager.DoRequests(_msgSetRequest)
             CloseQB()
 
-            _resultTable = New DataTable
+            Dim headerList As List(Of String) = {"Account", "Date", "Number", "Class", "Trans #", "Amount", "Type", "TxnID"}.ToList
+            Dim typeList As List(Of Type) = {GetType(String), GetType(Date), GetType(String), GetType(String), GetType(Integer), GetType(Double), GetType(String), GetType(String)}.ToList
+            _fieldCount = headerList.Count
+            _sql = New SQL(reconSource.ReconTable, _fieldCount, headerList, typeList)
+            If Not _sql.CreateTable() Then
+                Return False
+            End If
             WalkGeneralDetailReportQueryRs()
-            Return _resultTable
+            Return True
 
         Catch ex As Exception
+            Application.ErrorMessage($"Error Loading Report: {ex.Message}")
         End Try
 
         Return Nothing
@@ -354,7 +373,7 @@ Public Class GetQBFC
 
                         If responseType = ENResponseType.rtGeneralDetailReportQueryRs Then
                             Dim ReportRet As IReportRet = CType(response.Detail, IReportRet)
-                            GetReportColumns(ReportRet)
+                            'GetReportColumns(ReportRet)
                             WalkReportRet(ReportRet)
                         End If
                     End If
@@ -366,47 +385,47 @@ Public Class GetQBFC
         End Try
     End Sub
 
-    Private Sub GetReportColumns(ByVal ReportRet As IReportRet)
-        Try
-            Dim headerText As String = String.Empty
-            Dim colDesc As IColDesc
+    'Private Sub GetReportColumns(ByVal ReportRet As IReportRet)
+    '    Try
+    '        Dim headerText As String = String.Empty
+    '        Dim colDesc As IColDesc
 
-            If (Not ReportRet.ColDescList Is Nothing) Then
-                For index = 0 To ReportRet.ColDescList.Count - 1
-                    colDesc = ReportRet.ColDescList.GetAt(index)
-                    If (Not colDesc Is Nothing) Then
-                        If (Not colDesc.ColTitleList Is Nothing) Then
-                            If (colDesc.ColTitleList.Count >= 1) Then
-                                Dim colTitle As IColTitle
-                                colTitle = colDesc.ColTitleList.GetAt(0)
-                                If (Not colTitle Is Nothing) Then
-                                    If (Not colTitle.titleRow Is Nothing) And
-                                       (Not colTitle.value Is Nothing) Then
-                                        Dim x = colTitle.titleRow
-                                        Debug.Print(x)
-                                        headerText = colTitle.value.GetValue()
-                                        Dim qbType As String = colDesc.dataType.GetAsString()
-                                        Select Case qbType
-                                            Case "STRTYPE"
-                                                _resultTable.Columns.Add(headerText, GetType(String))
-                                            Case "AMTTYPE"
-                                                _resultTable.Columns.Add(headerText, GetType(Single))
-                                            Case "DATETYPE"
-                                                _resultTable.Columns.Add(headerText, GetType(Date))
-                                            Case Else
-                                                _resultTable.Columns.Add(headerText, GetType(String))
-                                        End Select
-                                    End If
-                                End If
-                            End If
-                        End If
-                    End If
-                Next
-            End If
-        Catch ex As Exception
+    '        If (Not ReportRet.ColDescList Is Nothing) Then
+    '            For index = 0 To ReportRet.ColDescList.Count - 1
+    '                colDesc = ReportRet.ColDescList.GetAt(index)
+    '                If (Not colDesc Is Nothing) Then
+    '                    If (Not colDesc.ColTitleList Is Nothing) Then
+    '                        If (colDesc.ColTitleList.Count >= 1) Then
+    '                            Dim colTitle As IColTitle
+    '                            colTitle = colDesc.ColTitleList.GetAt(0)
+    '                            If (Not colTitle Is Nothing) Then
+    '                                If (Not colTitle.titleRow Is Nothing) And
+    '                                   (Not colTitle.value Is Nothing) Then
+    '                                    Dim x = colTitle.titleRow
+    '                                    Debug.Print(x)
+    '                                    headerText = colTitle.value.GetValue()
+    '                                    Dim qbType As String = colDesc.dataType.GetAsString()
+    '                                    Select Case qbType
+    '                                        Case "STRTYPE"
+    '                                            '_resultTable.Columns.Add(headerText, GetType(String))
+    '                                        Case "AMTTYPE"
+    '                                            '_resultTable.Columns.Add(headerText, GetType(Single))
+    '                                        Case "DATETYPE"
+    '                                            '_resultTable.Columns.Add(headerText, GetType(Date))
+    '                                        Case Else
+    '                                            '_resultTable.Columns.Add(headerText, GetType(String))
+    '                                    End Select
+    '                                End If
+    '                            End If
+    '                        End If
+    '                    End If
+    '                End If
+    '            Next
+    '        End If
+    '    Catch ex As Exception
 
-        End Try
-    End Sub
+    '    End Try
+    'End Sub
 
     Private Sub WalkReportRet(ByVal ReportRet As IReportRet)
         Try
@@ -416,8 +435,9 @@ Public Class GetQBFC
 
                 If ReportRet.ReportData.ORReportDataList IsNot Nothing Then
 
-                    For i35 As Integer = 0 To ReportRet.ReportData.ORReportDataList.Count - 1
-                        Dim ORReportData As IORReportData = ReportRet.ReportData.ORReportDataList.GetAt(i35)
+                    For idx As Integer = 0 To ReportRet.ReportData.ORReportDataList.Count - 1
+                        If idx Mod 250 = 0 Then Application.Message(idx.ToString)
+                        Dim ORReportData As IORReportData = ReportRet.ReportData.ORReportDataList.GetAt(idx)
 
                         If ORReportData.DataRow IsNot Nothing Then
 
@@ -430,82 +450,64 @@ Public Class GetQBFC
                                 End If
 
                                 If ORReportData.DataRow.ColDataList IsNot Nothing Then
-                                    Dim rowValues As New List(Of Object)
+                                    Dim rowList As New List(Of Object)
 
+                                    Dim colCount As Integer = ORReportData.DataRow.ColDataList.Count
+                                    If colCount <> _fieldCount Then Continue For
+                                    For i36 As Integer = 0 To colCount - 1
 
-                                    For i36 As Integer = 0 To ORReportData.DataRow.ColDataList.Count - 1
-
-                                        'Dim colDesc As IColDesc
-                                        'Dim colTitle As IColTitle
-                                        'colDesc = ReportRet.ColDescList.GetAt(i36)
-                                        'colTitle = colDesc.ColTitleList.GetAt(0)
-                                        'If (Not colTitle Is Nothing) Then
-                                        '    If (Not colTitle.titleRow Is Nothing) And
-                                        '       (Not colTitle.value Is Nothing) Then 'Only if there was a column match with data
                                         Dim ColData As IColData = ORReportData.DataRow.ColDataList.GetAt(i36)
-                                        'Debug.Print(ColData.colID.GetValue())
                                         Dim dataValue As String = ColData.value.GetValue()
-                                        Select Case "x" '_resultTable.Columns(i36).DataType.Name
-                                            Case "DateTime"
-                                                Dim convertedDate As Date
-                                                If Date.TryParse(dataValue, convertedDate) Then
-                                                    rowValues.Add(convertedDate)
-                                                Else
-                                                    rowValues.Add(Nothing)
-
-                                                End If
-                                            Case "Single"
-                                                rowValues.Add(CSng(dataValue))
-                                            Case Else
-                                                rowValues.Add(dataValue)
-                                        End Select
+                                        rowList.Add(dataValue)
                                     Next
-                                    _resultTable.Rows.Add(rowValues.ToArray)
-
+                                    If Not _sql.InsertRow(rowList) Then
+                                        Application.ErrorMessage($"Insert from QB Report failed at: {idx}")
+                                        Exit Sub
+                                    End If
                                 End If
                             End If
                         End If
 
-                        If ORReportData.TextRow IsNot Nothing Then
+                        'If ORReportData.TextRow IsNot Nothing Then
 
-                            If ORReportData.TextRow IsNot Nothing Then
-                                'For Each member As String In GetMemberNames(ORReportData.TextRow)
-                                '    Debug.Print(member)
-                                'Next
-                            End If
-                        End If
+                        '    If ORReportData.TextRow IsNot Nothing Then
+                        '        'For Each member As String In GetMemberNames(ORReportData.TextRow)
+                        '        '    Debug.Print(member)
+                        '        'Next
+                        '    End If
+                        'End If
 
-                        If ORReportData.SubtotalRow IsNot Nothing Then
+                        'If ORReportData.SubtotalRow IsNot Nothing Then
 
-                            If ORReportData.SubtotalRow IsNot Nothing Then
+                        '    If ORReportData.SubtotalRow IsNot Nothing Then
 
-                                If ORReportData.SubtotalRow.RowData IsNot Nothing Then
-                                End If
+                        '        If ORReportData.SubtotalRow.RowData IsNot Nothing Then
+                        '        End If
 
-                                If ORReportData.SubtotalRow.ColDataList IsNot Nothing Then
+                        '        If ORReportData.SubtotalRow.ColDataList IsNot Nothing Then
 
-                                    For i37 As Integer = 0 To ORReportData.SubtotalRow.ColDataList.Count - 1
-                                        Dim ColData As IColData = ORReportData.SubtotalRow.ColDataList.GetAt(i37)
-                                    Next
-                                End If
-                            End If
-                        End If
+                        '            For i37 As Integer = 0 To ORReportData.SubtotalRow.ColDataList.Count - 1
+                        '                Dim ColData As IColData = ORReportData.SubtotalRow.ColDataList.GetAt(i37)
+                        '            Next
+                        '        End If
+                        '    End If
+                        'End If
 
-                        If ORReportData.TotalRow IsNot Nothing Then
+                        'If ORReportData.TotalRow IsNot Nothing Then
 
-                            If ORReportData.TotalRow IsNot Nothing Then
+                        '    If ORReportData.TotalRow IsNot Nothing Then
 
-                                If ORReportData.TotalRow.RowData IsNot Nothing Then
-                                End If
+                        '        If ORReportData.TotalRow.RowData IsNot Nothing Then
+                        '        End If
 
-                                If ORReportData.TotalRow.ColDataList IsNot Nothing Then
+                        '        If ORReportData.TotalRow.ColDataList IsNot Nothing Then
 
-                                    For i38 As Integer = 0 To ORReportData.TotalRow.ColDataList.Count - 1
-                                        Dim ColData As IColData = ORReportData.TotalRow.ColDataList.GetAt(i38)
-                                    Next
-                                End If
-                            End If
-                        End If
+                        '            For i38 As Integer = 0 To ORReportData.TotalRow.ColDataList.Count - 1
+                        '                Dim ColData As IColData = ORReportData.TotalRow.ColDataList.GetAt(i38)
+                        '            Next
+                        '        End If
+                        '    End If
+                        'End If
                     Next
                 End If
             End If
@@ -514,4 +516,36 @@ Public Class GetQBFC
 
         End Try
     End Sub
+
+#Region "IDisposable Support"
+    Private disposedValue As Boolean ' To detect redundant calls
+
+    ' IDisposable
+    Protected Overridable Sub Dispose(disposing As Boolean)
+        If Not disposedValue Then
+            If disposing Then
+                ' TODO: dispose managed state (managed objects).
+            End If
+
+            ' TODO: free unmanaged resources (unmanaged objects) and override Finalize() below.
+            ' TODO: set large fields to null.
+        End If
+        disposedValue = True
+    End Sub
+
+    ' TODO: override Finalize() only if Dispose(disposing As Boolean) above has code to free unmanaged resources.
+    'Protected Overrides Sub Finalize()
+    '    ' Do not change this code.  Put cleanup code in Dispose(disposing As Boolean) above.
+    '    Dispose(False)
+    '    MyBase.Finalize()
+    'End Sub
+
+    ' This code added by Visual Basic to correctly implement the disposable pattern.
+    Public Sub Dispose() Implements IDisposable.Dispose
+        ' Do not change this code.  Put cleanup code in Dispose(disposing As Boolean) above.
+        Dispose(True)
+        ' TODO: uncomment the following line if Finalize() is overridden above.
+        ' GC.SuppressFinalize(Me)
+    End Sub
+#End Region
 End Class

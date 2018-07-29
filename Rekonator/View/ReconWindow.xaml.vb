@@ -292,11 +292,6 @@ Partial Class ReconWindow
 
     End Sub
 
-    Private Sub btnLoad_Click(sender As Object, e As RoutedEventArgs)
-        Dim qbfc As New GetQBFC
-        LeftSet = qbfc.GetReport("P/L Detail").AsDataView
-        'LeftSet = qbfc.GetList("Item")
-    End Sub
 
     Private Sub btnMatch_Click(sender As Object, e As RoutedEventArgs)
         'DifferSet = _left
