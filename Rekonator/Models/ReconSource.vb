@@ -8,8 +8,8 @@ Public Class ReconSource
     Property Parameters As Dictionary(Of String, String)
     Property LoadedSet As DataTable
     Property Where As String
-    Property Fields() As String
-    Property Types() As String
+    Property Fields As String()
+    Property Types As String()
     Property Aggregations As List(Of Aggregate)
 
     Public Shared Function GetSelect(reconSource As ReconSource) As String

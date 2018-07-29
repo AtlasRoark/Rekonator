@@ -136,6 +136,23 @@ Partial Class MainWindow
         Exit Sub
 
     End Sub
+
+    Private Sub btnLeft_Click(sender As Object, e As RoutedEventArgs)
+        MessageLog.Clear()
+        _reconciliation.LeftReconSource.IsLoaded = False
+        btnMatch_Click(sender, e)
+    End Sub
+    Private Sub btnRight_Click(sender As Object, e As RoutedEventArgs)
+        MessageLog.Clear()
+        _reconciliation.RightReconSource.IsLoaded = False
+        btnMatch_Click(sender, e)
+    End Sub
+    Private Sub btnMatch_Click(sender As Object, e As RoutedEventArgs)
+        MessageLog.Clear()
+        Task.Factory.StartNew(Sub() Configure("QB P/L Detail")).
+                                  ContinueWith(Sub() LoadReconSources()).
+                                  ContinueWith(Sub() Test())
+    End Sub
 #End Region
 
     Public Sub New()
@@ -175,55 +192,55 @@ Partial Class MainWindow
             RightSet = _right.AsDataView
         End Using
 
-        If _reconciliation.LeftReconSource.Aggregations IsNot Nothing Then DoAggregation(_reconciliation.LeftReconSource)
-        If _reconciliation.RightReconSource.Aggregations IsNot Nothing Then DoAggregation(_reconciliation.RightReconSource)
+        'If _reconciliation.LeftReconSource.Aggregations IsNot Nothing Then DoAggregation(_reconciliation.LeftReconSource)
+        'If _reconciliation.RightReconSource.Aggregations IsNot Nothing Then DoAggregation(_reconciliation.RightReconSource)
     End Sub
 
-    Private Sub DoAggregation(reconSource As ReconSource)
+    'Private Sub DoAggregation(reconSource As ReconSource)
 
-        _rightDetails = _right.Copy
-        _right.Reset()
-        'Dim removes As New List(Of DataRow)
-        ''Dim colHeaders As DataColumn() = (From a As Aggregate In _aggregates
-        ''                                  Select New DataColumn With {
-        ''                          .ColumnName = a.AggregateName,
-        ''                          .DataType = GetType(String)
-        ''                          }
-        ''                     ).ToArray
-        ''_right.Columns.AddRange(colHeaders)
+    '    _rightDetails = _right.Copy
+    '    _right.Reset()
+    'Dim removes As New List(Of DataRow)
+    ''Dim colHeaders As DataColumn() = (From a As Aggregate In _aggregates
+    ''                                  Select New DataColumn With {
+    ''                          .ColumnName = a.AggregateName,
+    ''                          .DataType = GetType(String)
+    ''                          }
+    ''                     ).ToArray
+    ''_right.Columns.AddRange(colHeaders)
 
-        'For Each a In _aggregates
-        '    'Todo Match DataSourceName
+    'For Each a In _aggregates
+    '    'Todo Match DataSourceName
 
-        '    Dim groups = From row In _rightDetails.AsEnumerable
-        '                 Group row By GroupKey = row.Field(Of Double)("Customer ID") Into AggGroup = Group
-        '                 Select New With {
-        '    Key GroupKey,
-        '    .EntryTotal = AggGroup.Sum(Function(r) r.Field(Of Double)("Entry")),
-        '    .EntryAvg = AggGroup.Average(Function(r) r.Field(Of Double)("Entry")),
-        '    .EntryCount = AggGroup.Count(Function(r) r.Field(Of Double)("Entry"))
-        '    }
+    '    Dim groups = From row In _rightDetails.AsEnumerable
+    '                 Group row By GroupKey = row.Field(Of Double)("Customer ID") Into AggGroup = Group
+    '                 Select New With {
+    '    Key GroupKey,
+    '    .EntryTotal = AggGroup.Sum(Function(r) r.Field(Of Double)("Entry")),
+    '    .EntryAvg = AggGroup.Average(Function(r) r.Field(Of Double)("Entry")),
+    '    .EntryCount = AggGroup.Count(Function(r) r.Field(Of Double)("Entry"))
+    '    }
 
-        '    Dim colHeaders As DataColumn() = (From ao As AggregateOperation In a.AggregateOperations
-        '                                      Select New DataColumn With {
-        '                              .ColumnName = ao.AggregateColumn,
-        '                              .DataType = IIf(ao.Operation = AggregateOperation.AggregateFunction.Count, GetType(Integer), GetType(String))
-        '                              }
-        '                         ).ToArray
-        '    _right.Columns.AddRange(colHeaders)
-        '    _right.Columns.Add(New DataColumn With {.ColumnName = "GroupKey", .DataType = GetType(String)})
-        '    For Each g In groups
-        '        Dim GroupRowData As New List(Of String)
-        '        For Each ao As AggregateOperation In a.AggregateOperations
-        '            GroupRowData.Add(InvokeGet(g, ao.AggregateColumn))
-        '        Next
-        '        GroupRowData.Add(g.GroupKey)
-        '        _right.Rows.Add(GroupRowData.ToArray)
+    '    Dim colHeaders As DataColumn() = (From ao As AggregateOperation In a.AggregateOperations
+    '                                      Select New DataColumn With {
+    '                              .ColumnName = ao.AggregateColumn,
+    '                              .DataType = IIf(ao.Operation = AggregateOperation.AggregateFunction.Count, GetType(Integer), GetType(String))
+    '                              }
+    '                         ).ToArray
+    '    _right.Columns.AddRange(colHeaders)
+    '    _right.Columns.Add(New DataColumn With {.ColumnName = "GroupKey", .DataType = GetType(String)})
+    '    For Each g In groups
+    '        Dim GroupRowData As New List(Of String)
+    '        For Each ao As AggregateOperation In a.AggregateOperations
+    '            GroupRowData.Add(InvokeGet(g, ao.AggregateColumn))
+    '        Next
+    '        GroupRowData.Add(g.GroupKey)
+    '        _right.Rows.Add(GroupRowData.ToArray)
 
-        '    Next
-        'Next
+    '    Next
+    'Next
 
-    End Sub
+    'End Sub
 
 
     'Private Function Reconcile() As Tuple(Of Data.DataRow, Data.DataRow)
@@ -291,20 +308,19 @@ Partial Class MainWindow
 
     'End Sub
 
-    Private Sub btnMatch_Click(sender As Object, e As RoutedEventArgs)
-        MessageLog.Clear()
-        Task.Factory.StartNew(Sub() Configure("Test Agg")).
-                                  ContinueWith(Sub() LoadReconSources()).
-                                  ContinueWith(Sub() Test())
-    End Sub
+
 
     Private Sub Configure(testName As String)
-        Dim _completenessComparisions As New List(Of Comparision)
-        Dim _matchingComparisions As New List(Of Comparision)
+        Dim completenessComparisions As New List(Of Comparision)
+        Dim matchingComparisions As New List(Of Comparision)
+        Dim aggOps As List(Of AggregateOperation)
+        Dim aggregates As List(Of Aggregate)
         Dim leftRS As ReconSource = Nothing
         Dim rightRS As ReconSource = Nothing
+        Reconciliation.Clear
         Select Case testName
             Case "QB P/L Detail"
+                'Left
                 Dim sqlDS As DataSource = DataSource.GetDataSource("SQL")
                 Dim sqlParam As New Dictionary(Of String, String)
                 sqlParam.Add("connectionstring", "Data Source=dbvipmaster;Initial Catalog=Prod-Lahydrojet;User ID=linxlogic;Password=6a3r3a0$")
@@ -318,6 +334,12 @@ Partial Class MainWindow
                     .IsLoaded = True,
                     .Parameters = sqlParam}
 
+                'Right
+                aggOps = New List(Of AggregateOperation)
+                aggOps.Add(New AggregateOperation With {.SourceColumn = "Amount", .AggregateColumn = "Total", .Operation = AggregateOperation.AggregateFunction.Sum})
+                aggregates = New List(Of Aggregate)
+                aggregates.Add(New Aggregate With {.GroupByColumns = {"TxnID", "Account"}, .AggregateOperations = aggOps})
+
                 Dim qbDS As DataSource = DataSource.GetDataSource("QuickBooks")
                 sqlParam = New Dictionary(Of String, String)
                 sqlParam.Add("request", "AppendGeneralDetailReportQueryRq")
@@ -326,13 +348,15 @@ Partial Class MainWindow
                     {.ReconDataSource = qbDS,
                     .ReconTable = "lah_qb_pldetail",
                     .IsLoaded = True,
-                    .Parameters = sqlParam}
+                    .Parameters = sqlParam,
+                    .Aggregations = aggregates}
 
-                _completenessComparisions.Add(New Comparision With {.LeftColumn = "TXN ID", .RightColumn = "TxnID", .ComparisionTest = ComparisionType.TextCaseEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "Reference", .RightColumn = "Number", .ComparisionTest = ComparisionType.TextEquals})
-                Reconciliation.Add("Test Set", leftRS, rightRS, _completenessComparisions, _matchingComparisions, #6/1/2018#, #6/30/2018#)
+                completenessComparisions.Add(New Comparision With {.LeftColumn = "TXN ID", .RightColumn = "TxnID", .ComparisionTest = ComparisionType.TextCaseEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "Reference", .RightColumn = "Total", .ComparisionTest = ComparisionType.TextEquals})
+                Reconciliation.Add("Test Set", leftRS, rightRS, completenessComparisions, matchingComparisions, #6/1/2018#, #6/30/2018#)
 
             Case "Account Detail"
+                'Left
                 Dim sqlDS As DataSource = DataSource.GetDataSource("SQL")
                 Dim sqlParam As New Dictionary(Of String, String)
                 sqlParam.Add("connectionstring", "Data Source=dbvipmaster;Initial Catalog=Prod-Lahydrojet;User ID=linxlogic;Password=6a3r3a0$")
@@ -343,8 +367,10 @@ Partial Class MainWindow
                 leftRS = New ReconSource With
                     {.ReconDataSource = sqlDS,
                     .ReconTable = "lah_sql_accountdetail",
-                    .IsLoaded = False,
+                    .IsLoaded = True,
                     .Parameters = sqlParam}
+
+                'Right
 
                 Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
                 Dim excelParam As New Dictionary(Of String, String)
@@ -353,16 +379,16 @@ Partial Class MainWindow
                 rightRS = New ReconSource With
                     {.ReconDataSource = excelDS,
                     .ReconTable = "lah_accountdetail",
-                    .IsLoaded = False,
+                    .IsLoaded = True,
                     .Parameters = excelParam}
 
-                _completenessComparisions.Add(New Comparision With {.LeftColumn = "ExportID", .RightColumn = "Item ID", .ComparisionTest = ComparisionType.TextCaseEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Name", .RightColumn = "Item Name", .ComparisionTest = ComparisionType.TextEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Qty", .RightColumn = "Item Qty", .Percision = 4, .ComparisionTest = ComparisionType.NumberEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Price", .RightColumn = "Item Price", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Reorder", .RightColumn = "Item Reorder", .ComparisionTest = ComparisionType.NumberEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Service Date", .RightColumn = "Service Date", .ComparisionTest = ComparisionType.DateEquals})
-                Reconciliation.Add("Test Set", leftRS, rightRS, _completenessComparisions, _matchingComparisions, #5/1/2018#, #5/31/2018#)
+                completenessComparisions.Add(New Comparision With {.LeftColumn = "ExportID", .RightColumn = "Item ID", .ComparisionTest = ComparisionType.TextCaseEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Name", .RightColumn = "Item Name", .ComparisionTest = ComparisionType.TextEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Qty", .RightColumn = "Item Qty", .Percision = 4, .ComparisionTest = ComparisionType.NumberEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Price", .RightColumn = "Item Price", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Reorder", .RightColumn = "Item Reorder", .ComparisionTest = ComparisionType.NumberEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Service Date", .RightColumn = "Service Date", .ComparisionTest = ComparisionType.DateEquals})
+                Reconciliation.Add("Test Set", leftRS, rightRS, completenessComparisions, matchingComparisions, #5/1/2018#, #5/31/2018#)
             Case "Test 1"
 
 
@@ -386,13 +412,13 @@ Partial Class MainWindow
                     .IsLoaded = False,
                     .Parameters = excelParam}
 
-                _completenessComparisions.Add(New Comparision With {.LeftColumn = "ST Export ID", .RightColumn = "Item ID", .ComparisionTest = ComparisionType.TextCaseEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Name", .RightColumn = "Item Name", .ComparisionTest = ComparisionType.TextEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Qty", .RightColumn = "Item Qty", .Percision = 4, .ComparisionTest = ComparisionType.NumberEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Price", .RightColumn = "Item Price", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Reorder", .RightColumn = "Item Reorder", .ComparisionTest = ComparisionType.NumberEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Service Date", .RightColumn = "Service Date", .ComparisionTest = ComparisionType.DateEquals})
-                Reconciliation.Add("Test Set", leftRS, rightRS, _completenessComparisions, _matchingComparisions)
+                completenessComparisions.Add(New Comparision With {.LeftColumn = "ST Export ID", .RightColumn = "Item ID", .ComparisionTest = ComparisionType.TextCaseEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Name", .RightColumn = "Item Name", .ComparisionTest = ComparisionType.TextEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Qty", .RightColumn = "Item Qty", .Percision = 4, .ComparisionTest = ComparisionType.NumberEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Price", .RightColumn = "Item Price", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Reorder", .RightColumn = "Item Reorder", .ComparisionTest = ComparisionType.NumberEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Service Date", .RightColumn = "Service Date", .ComparisionTest = ComparisionType.DateEquals})
+                Reconciliation.Add("Test Set", leftRS, rightRS, completenessComparisions, matchingComparisions)
             Case "Huber"
                 Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
                 Dim excelParam As New Dictionary(Of String, String)
@@ -415,11 +441,12 @@ Partial Class MainWindow
                     .Parameters = excelParam,
                     .Where = "NOT (ISNULL(x!.[SubTotal], '')='' OR x!.[SubTotal]='0')"}
 
-                _completenessComparisions.Add(New Comparision With {.LeftColumn = "QB Export ID", .RightColumn = "TxnId", .ComparisionTest = ComparisionType.TextCaseEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "Total", .RightColumn = "Subtotal", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
-                Reconciliation.Add("March Invoices", leftRS, rightRS, _completenessComparisions, _matchingComparisions)
+                completenessComparisions.Add(New Comparision With {.LeftColumn = "QB Export ID", .RightColumn = "TxnId", .ComparisionTest = ComparisionType.TextCaseEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "Total", .RightColumn = "Subtotal", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
+                Reconciliation.Add("March Invoices", leftRS, rightRS, completenessComparisions, matchingComparisions)
 
             Case "Test Agg"
+                'Left
                 Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
                 Dim excelParam As New Dictionary(Of String, String)
                 excelParam.Add("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
@@ -429,15 +456,19 @@ Partial Class MainWindow
                     .ReconTable = "aggbalance",
                     .IsLoaded = False,
                     .Parameters = excelParam,
-                    .Where = "NOT (ISNULL(x!.[Balance], '')='' OR x!.[Balance]='0')"}
+                    .Where = "ISNULL(x!.[Balance], 0) <> 0",
+                    .Fields = {"Customer ID", "Balance", "Count", "Avg", "Test"},
+                    .Types = {"Integer", "Integer", "Currency", "Integer", "String"}
+                }
 
-                Dim aggOps As New List(Of AggregateOperation)
+                'Right
+                aggOps = New List(Of AggregateOperation)
                 aggOps.Add(New AggregateOperation With {.SourceColumn = "Entry", .AggregateColumn = "EntryTotal", .Operation = AggregateOperation.AggregateFunction.Sum})
                 aggOps.Add(New AggregateOperation With {.SourceColumn = "Entry", .AggregateColumn = "EntryAvg", .Operation = AggregateOperation.AggregateFunction.Avg})
                 aggOps.Add(New AggregateOperation With {.SourceColumn = "Entry", .AggregateColumn = "EntryCount", .Operation = AggregateOperation.AggregateFunction.Count})
-                Dim _aggregates As New List(Of Aggregate)
 
-                _aggregates.Add(New Aggregate With {.DataSourceName = "", .GroupByColumns = {"Customer ID"}, .AggregateOperations = aggOps})
+                aggregates = New List(Of Aggregate)
+                aggregates.Add(New Aggregate With {.GroupByColumns = {"Customer ID"}, .AggregateOperations = aggOps})
 
                 excelParam = New Dictionary(Of String, String)
                 excelParam.Add("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
@@ -447,14 +478,17 @@ Partial Class MainWindow
                     .ReconTable = "aggentries",
                     .IsLoaded = False,
                     .Parameters = excelParam,
-                    .Aggregations = _aggregates}
+                    .Aggregations = aggregates,
+                    .Where = "ISNULL(x!.[Entry], 0) <> 0",
+                    .Fields = {"Customer ID", "Entry", "Test"},
+                    .Types = {"Integer", "Currency", "String"}
+                }
 
-
-                _completenessComparisions.Add(New Comparision With {.LeftColumn = "Customer ID", .RightColumn = "GroupKey", .ComparisionTest = ComparisionType.TextCaseEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "Balance", .RightColumn = "EntryTotal", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "Count", .RightColumn = "EntryCount", .Percision = 0, .ComparisionTest = ComparisionType.NumberEquals})
-                _matchingComparisions.Add(New Comparision With {.LeftColumn = "Ang", .RightColumn = "EntryAvg", .Percision = 9, .ComparisionTest = ComparisionType.NumberEquals})
-                Reconciliation.Add("March Invoices", leftRS, rightRS, _completenessComparisions, _matchingComparisions)
+                completenessComparisions.Add(New Comparision With {.LeftColumn = "Customer ID", .RightColumn = "Customer ID", .ComparisionTest = ComparisionType.TextCaseEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "Balance", .RightColumn = "EntryTotal", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "Count", .RightColumn = "EntryCount", .Percision = 0, .ComparisionTest = ComparisionType.NumberEquals})
+                matchingComparisions.Add(New Comparision With {.LeftColumn = "Avg", .RightColumn = "EntryAvg", .Percision = 9, .ComparisionTest = ComparisionType.NumberEquals})
+                Reconciliation.Add("March Invoices", leftRS, rightRS, completenessComparisions, matchingComparisions)
 
         End Select
 
@@ -495,11 +529,16 @@ Partial Class MainWindow
     End Sub
 
     Public Sub AddMessage(messageText As String, isError As Boolean)
-        If Not BottomFlyout.IsOpen Then BottomFlyout.IsOpen = True
-        MessageLog.Add(New MessageEntry With {.MessageText = messageText, .IsError = isError})
-        OnPropertyChanged("MessageLog")
-        lbMessageLog.SelectedIndex = lbMessageLog.Items.Count - 1
-        lbMessageLog.ScrollIntoView(lbMessageLog.SelectedItem)
+        Try
+            If Not BottomFlyout.IsOpen Then BottomFlyout.IsOpen = True
+            MessageLog.Add(New MessageEntry With {.MessageText = messageText, .IsError = isError})
+            OnPropertyChanged("MessageLog")
+            lbMessageLog.SelectedIndex = lbMessageLog.Items.Count - 1
+            lbMessageLog.ScrollIntoView(lbMessageLog.SelectedItem)
+
+        Catch
+
+        End Try
     End Sub
 
     Private Sub DataGridCell_PreviewKeyDown(sender As Object, e As KeyEventArgs)

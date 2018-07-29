@@ -9,7 +9,7 @@ Public Class SQL
     Private _reconTable As String
     Private _fieldCount As Integer
     Private _headerList As List(Of String)
-    Private _typeList As List(Of Type)
+    Private _typeList As List(Of String)
     Private _sb As New StringBuilder
     Private _rowNumber As Integer = 0
     Private _CurrencyKeywords() As String = {"amount", "total", "payment", "subtotal", "debit", "credit", "balance", "amt", "price", "cost", "$"}
@@ -27,7 +27,7 @@ Public Class SQL
 
 
 
-    Public Sub New(reconTable As String, fieldCount As Integer, headerList As List(Of String), typeList As List(Of Type))
+    Public Sub New(reconTable As String, fieldCount As Integer, headerList As List(Of String), typeList As List(Of String))
         Me._reconTable = reconTable
         Me._fieldCount = fieldCount
         Me._headerList = headerList
@@ -45,6 +45,8 @@ Public Class SQL
             Return dt
 
         Catch ex As Exception
+            Debug.Print(ex.Message)
+            Debug.Print(selectCommand)
             Application.ErrorMessage($"Error getting dataview for {selectCommand}: {ex.Message}")
         End Try
         Return Nothing
@@ -59,8 +61,8 @@ Public Class SQL
             _sb.AppendLine("rekonid int IDENTITY(1,1),")
             For idx = 0 To _fieldCount - 1
                 _sb.Append($"[{_headerList(idx)}]")
-                Select Case _typeList(idx).Name
-                    Case "Int32"
+                Select Case _typeList(idx)
+                    Case "Int32", "Integer"
                         _sb.AppendLine(" INT NULL,")
                     Case "Double"
                         If IsCurrency(_headerList(idx)) Then
@@ -70,6 +72,8 @@ Public Class SQL
                         Else
                             _sb.AppendLine(" DECIMAL(16,6) NULL,")
                         End If
+                    Case "Currency"
+                        _sb.AppendLine(" DECIMAL(14,2) NULL,")
                     Case "Date"
                         _sb.AppendLine(" DATE NULL,")
                     Case "DateTime"
@@ -109,8 +113,8 @@ Public Class SQL
                 If rowList(idx) Is Nothing Then
                     _sb.AppendLine("Null,")
                 Else
-                    Select Case _typeList(idx).Name
-                        Case "Double", "Int32"
+                    Select Case _typeList(idx)
+                        Case "Double", "Int32", "Integer", "Currency"
                             _sb.AppendLine($"{rowList(idx)},")
                         Case "DateTime"
                             _sb.AppendLine($"'{CDate(rowList(idx)).ToString("yyyy-MM-dd hh:mm:ss")}',")

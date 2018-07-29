@@ -25,25 +25,33 @@ Public Class GetExcel
 
                     'Get Headers
                     If Not excelReader.Read() Then Return Nothing
-                    Dim headerList As New List(Of String)
-                    Dim fieldCount = excelReader.FieldCount
-                    For idx = 0 To fieldCount - 1
-                        If excelReader.GetValue(idx) Is Nothing Then Exit For
-                        headerList.Add(excelReader.GetValue(idx))
-                    Next
-                    fieldCount = headerList.Count
+                    Dim fieldCount As Integer = 0
+                    Dim fieldList As New List(Of String)
+                    If reconSource.Fields Is Nothing Then
+                        fieldCount = excelReader.FieldCount
+                        For idx = 0 To fieldCount - 1
+                            If excelReader.GetValue(idx) Is Nothing Then Exit For
+                            fieldList.Add(excelReader.GetValue(idx))
+                        Next
+                    Else
+                        fieldList = reconSource.Fields.ToList
+                    End If
+                    fieldCount = fieldList.Count
 
                     'Get Field Types and First Row
                     If Not excelReader.Read() Then Return Nothing
-                    Dim typeList As New List(Of Type)
+                    Dim typeList As New List(Of String)
                     Dim rowList As New List(Of Object)
                     For idx = 0 To fieldCount - 1
-                        typeList.Add(excelReader.GetFieldType(idx))
-                        If typeList(idx) Is Nothing Then typeList(idx) = GetType(String)
+                        If reconSource.Types Is Nothing Then
+                            typeList.Add(excelReader.GetFieldType(idx).Name)
+                            If typeList(idx) Is Nothing Then typeList(idx) = "String"
+                        End If
                         rowList.Add(excelReader.GetValue(idx))
                     Next
+                    If reconSource.Types IsNot Nothing Then typeList = reconSource.Types.ToList
 
-                    Using sql As New SQL(reconTable, fieldCount, headerList, typeList)
+                    Using sql As New SQL(reconTable, fieldCount, fieldList, typeList)
                         If Not sql.CreateTable() Then
                             Return False
                         End If

@@ -46,7 +46,7 @@ Public Class GetQBD
             CloseQB()
 
             Dim headerList As List(Of String) = {"Account", "Date", "Number", "Class", "Trans #", "Amount", "Type", "TxnID"}.ToList
-            Dim typeList As List(Of Type) = {GetType(String), GetType(Date), GetType(String), GetType(String), GetType(Integer), GetType(Double), GetType(String), GetType(String)}.ToList
+            Dim typeList As List(Of String) = {"String", "Date", "String", "String", "Integer", "Double", "String", "String"}.ToList
             _fieldCount = headerList.Count
             _sql = New SQL(reconSource.ReconTable, _fieldCount, headerList, typeList)
             If Not _sql.CreateTable() Then
@@ -56,7 +56,7 @@ Public Class GetQBD
             Return True
 
         Catch ex As Exception
-            Application.ErrorMessage($"Error Loading Report: {ex.Message}")
+            Application.ErrorMessage($"Error Loading Report:  {ex.Message}")
         End Try
 
         Return Nothing

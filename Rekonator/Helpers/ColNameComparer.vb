@@ -1,6 +1,7 @@
 ﻿Imports System.Data
 Imports System.Globalization
 
+'Used to as .Distinct(New ColNameComparer)
 Public Class ColNameComparer
     Implements IEqualityComparer(Of DataColumn)
 

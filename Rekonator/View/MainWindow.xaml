@@ -136,9 +136,11 @@
                     Grid.Column="0">
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Center">
-                <TextBlock Text="Left"
-                           Margin="0,0,5,0"
-                           Style="{DynamicResource MaterialDesignTitleTextBlock}" />
+                <Button Content="Left"
+                        Name="btnLeft"
+                        HorizontalAlignment="Center"
+                        Click="btnLeft_Click" />
+                    <!--<TextBlock Text="Left" Style="{DynamicResource MaterialDesignTitleTextBlock}" />-->
                 <ToggleButton IsChecked="{Binding ElementName=LeftFlyout, Path=IsOpen}"
                               Cursor="Hand">
                 </ToggleButton>
@@ -168,9 +170,10 @@
                     Grid.Column="2">
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Center">
-                <TextBlock Text="Right"
-                           Margin="0,0,5,0"
-                           Style="{DynamicResource MaterialDesignTitleTextBlock}" />
+                <Button Content="Right"
+                        Name="btnRight"
+                        HorizontalAlignment="Center"
+                        Click="btnRight_Click" />
                 <ToggleButton IsChecked="{Binding ElementName=RightFlyout, Path=IsOpen}"
                               Cursor="Hand">
 

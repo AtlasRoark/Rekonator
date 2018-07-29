@@ -69,6 +69,7 @@
     </ApplicationDefinition>
     <Compile Include="Get\GetExcel.vb" />
     <Compile Include="Get\GetQBD.vb" />
+    <Compile Include="Helpers\Utility.vb" />
     <Compile Include="IReconCompare.vb" />
     <Compile Include="Models\MessageEntry.vb" />
     <Compile Include="SQL.vb" />
