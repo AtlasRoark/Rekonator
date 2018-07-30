@@ -208,7 +208,14 @@
                   Grid.Column="1"
                   ItemsSource="{Binding DifferSet}"
                   Style="{StaticResource ReconGrid}">
-
+            <DataGrid.ItemContainerStyle>
+                <Style TargetType="DataGridRow">
+                    <EventSetter Event="MouseDoubleClick"
+                                 Handler="DataGridRow_MouseDoubleClick" />
+                    <EventSetter Event="MouseRightButtonDown"
+                                 Handler="DataGridRow_MouseRightButtonDown" />
+                </Style>
+            </DataGrid.ItemContainerStyle>
             <DataGrid.CellStyle>
                 <Style TargetType="DataGridCell"
                        BasedOn="{StaticResource {x:Type DataGridCell}}">

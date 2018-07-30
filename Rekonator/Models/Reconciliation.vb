@@ -1,4 +1,5 @@
 ﻿Imports System.Text
+Imports Rekonator
 
 <Serializable()>
 Public Class Reconciliation
@@ -41,26 +42,27 @@ Public Class Reconciliation
     Public Shared Function GetMatchSelect(recon As Reconciliation) As String
         Dim isFirst As Boolean = True
         _sb.Clear()
-        _sb.AppendLine("IF(OBJECT_ID('Rekonator..[Match]') IS NOT NULL) DROP TABLE [Match];")
-        _sb.AppendLine()
+        _sb.AppendLine(MakeDropTable("Match"))
 
         Dim cteTable As String = String.Empty
         Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing)
         Dim aTable As String = $"[dbo].[{recon.LeftReconSource.ReconTable}] a"
         If isAggA Then
             cteTable = $"cte_{recon.LeftReconSource.ReconTable}_grp"
-            _sb.AppendLine(MakeGroupBy(recon.LeftReconSource, cteTable, "a"))
+            _sb.AppendLine(MakeGroupBy(recon.LeftReconSource, cteTable, "a", isFirst))
             aTable = $"{cteTable} a"
+            isFirst = False
         End If
         Dim isAggB As Boolean = (recon.RightReconSource.Aggregations IsNot Nothing)
         Dim bTable As String = $"[dbo].[{recon.RightReconSource.ReconTable}] b"
         If isAggB Then
             cteTable = $"cte_{recon.RightReconSource.ReconTable}_grp"
-            _sb.AppendLine(MakeGroupBy(recon.RightReconSource, cteTable, "b"))
+            _sb.AppendLine(MakeGroupBy(recon.RightReconSource, cteTable, "b", isFirst))
             bTable = $"{cteTable} b"
         End If
 
         _sb.AppendLine("SELECT")
+        isFirst = True
         For Each c As Comparision In recon.CompletenessComparisions.Union(recon.MatchingComparisions)
             If Not isFirst Then
                 _sb.Append(",")
@@ -75,26 +77,10 @@ Public Class Reconciliation
         _sb.AppendLine("INTO [Match]")
         _sb.AppendLine($"FROM {aTable}, {bTable}")
         _sb.AppendLine("WHERE")
+        _sb.AppendLine(MakeWhereComparision(recon.CompletenessComparisions))
+        _sb.Append("AND ")
+        _sb.AppendLine(MakeWhereComparision(recon.MatchingComparisions))
 
-        isFirst = True
-        For Each c As Comparision In recon.CompletenessComparisions.Union(recon.MatchingComparisions)
-            If Not isFirst Then
-                _sb.Append("And ")
-            End If
-            Select Case c.ComparisionTest
-                Case ComparisionType.TextCaseEquals
-                    _sb.AppendLine($"ISNULL(a.[{c.LeftColumn}],'') = ISNULL(b.[{c.RightColumn}],'')")
-                Case ComparisionType.TextEquals
-                    _sb.AppendLine($"LOWER(ISNULL(a.[{c.LeftColumn}],'')) = LOWER(ISNULL(b.[{c.RightColumn}],''))")
-                Case ComparisionType.NumberEquals
-                    _sb.AppendLine($"CONVERT(DECIMAL(14,{c.Percision}), ISNULL(a.[{c.LeftColumn}],0)) = CONVERT(DECIMAL(14,{c.Percision}), ISNULL(b.[{c.RightColumn}],0))")
-                Case ComparisionType.DateEquals
-                    _sb.AppendLine($"CONVERT(DATE, a.[{c.LeftColumn}]) = CONVERT(DATE, b.[{c.RightColumn}])")
-                Case ComparisionType.DateTimeEquals
-                    _sb.AppendLine($"CONVERT(DATETIME, a.[{c.LeftColumn}]) = CONVERT(DATETIME, b.[{c.RightColumn}])")
-            End Select
-            isFirst = False
-        Next
         If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.Where) And Not isAggA Then
             _sb.AppendLine($"AND {recon.LeftReconSource.Where.Replace("x!", "a")}")
         End If
@@ -107,10 +93,19 @@ Public Class Reconciliation
         Return _sb.ToString
     End Function
 
+    Private Shared Function MakeDropTable(tableName As String) As String
+        Dim mdt As New StringBuilder
+        mdt.AppendLine("BEGIN TRANSACTION;")
+        mdt.AppendLine($"IF (OBJECT_ID('Rekonator.[dbo].[{tableName}]') IS NOT NULL) DROP TABLE [{tableName}];")
+        mdt.AppendLine("COMMIT TRANSACTION;")
+        mdt.AppendLine()
+        Return mdt.ToString
+    End Function
+
     Public Shared Function GetDifferSelect(recon As Reconciliation) As String
         Dim isFirst As Boolean = True
         _sb.Clear()
-        _sb.AppendLine("IF(OBJECT_ID('Rekonator..[Differ]') IS NOT NULL) DROP TABLE [Differ];")
+        _sb.AppendLine("IF(OBJECT_ID('Rekonator.[dbo].[Differ]') IS NOT NULL) DROP TABLE [Differ];")
         _sb.AppendLine()
 
         Dim cteTable As String = String.Empty
@@ -118,23 +113,27 @@ Public Class Reconciliation
         Dim aTable As String = $"[dbo].[{recon.LeftReconSource.ReconTable}] a"
         If isAggA Then
             cteTable = $"cte_{recon.LeftReconSource.ReconTable}_grp"
-            _sb.AppendLine(MakeGroupBy(recon.LeftReconSource, cteTable, "a"))
+            _sb.AppendLine(MakeGroupBy(recon.LeftReconSource, cteTable, "a", isFirst))
             aTable = $"{cteTable} a"
+            isFirst = False
         End If
         Dim isAggB As Boolean = (recon.RightReconSource.Aggregations IsNot Nothing)
         Dim bTable As String = $"[dbo].[{recon.RightReconSource.ReconTable}] b"
         If isAggB Then
             cteTable = $"cte_{recon.RightReconSource.ReconTable}_grp"
-            _sb.AppendLine(MakeGroupBy(recon.RightReconSource, cteTable, "b"))
+            _sb.AppendLine(MakeGroupBy(recon.RightReconSource, cteTable, "b", isFirst))
             bTable = $"{cteTable} b"
         End If
+
         _sb.AppendLine("SELECT")
+        isFirst = True
         For Each c As Comparision In recon.CompletenessComparisions.Union(recon.MatchingComparisions)
             If Not isFirst Then
                 _sb.Append(",")
             End If
 
             Dim test As String = String.Empty
+            Dim diff As String = String.Empty
             Select Case c.ComparisionTest
                 Case ComparisionType.TextCaseEquals
                     test = $"ISNULL(a.[{c.LeftColumn}],'') = ISNULL(b.[{c.RightColumn}],'')"
@@ -142,13 +141,20 @@ Public Class Reconciliation
                     test = $"LOWER(ISNULL(a.[{c.LeftColumn}],'')) = LOWER(ISNULL(b.[{c.RightColumn}],''))"
                 Case ComparisionType.NumberEquals
                     test = $"CONVERT(DECIMAL(14,{c.Percision}), ISNULL(a.[{c.LeftColumn}],0)) = CONVERT(DECIMAL(14,{c.Percision}), ISNULL(b.[{c.RightColumn}],0))"
+                    diff = $"CONVERT(DECIMAL(14,{c.Percision}), (ISNULL(a.[{c.LeftColumn}],0) - ISNULL(b.[{c.RightColumn}],0)))"
                 Case ComparisionType.DateEquals
                     test = $"CONVERT(DATE, a.[{c.LeftColumn}]) = CONVERT(DATE, b.[{c.RightColumn}])"
                 Case ComparisionType.DateTimeEquals
                     test = $"CONVERT(DATETIME, a.[{c.LeftColumn}]) = CONVERT(DATETIME, b.[{c.RightColumn}])"
             End Select
 
-            _sb.AppendLine($"[{c.LeftColumn}:{c.RightColumn}] = CONCAT(a.[{c.LeftColumn}], IIf({test}, '=', '<>'), b.[{c.RightColumn}])")
+            _sb.Append($"[{c.LeftColumn}:{c.RightColumn}] = CONCAT(a.[{c.LeftColumn}], IIf({test}, '=', '<>'), b.[{c.RightColumn}]")
+            If String.IsNullOrEmpty(diff) Then
+                _sb.AppendLine(")")
+            Else
+                _sb.AppendLine($", ' :', IIf({test}, '', {diff})")
+                _sb.AppendLine(")")
+            End If
             isFirst = False
         Next
         If isAggA Then _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", True))
@@ -158,25 +164,9 @@ Public Class Reconciliation
         _sb.AppendLine("INTO [Differ]")
         _sb.AppendLine($"FROM {aTable}, {bTable}")
         _sb.AppendLine("WHERE")
-        isFirst = True
-        For Each c As Comparision In recon.CompletenessComparisions
-            If Not isFirst Then
-                _sb.Append("And ")
-            End If
-            Select Case c.ComparisionTest
-                Case ComparisionType.TextCaseEquals
-                    _sb.AppendLine($"ISNULL(a.[{c.LeftColumn}],'') = ISNULL(b.[{c.RightColumn}],'')")
-                Case ComparisionType.TextEquals
-                    _sb.AppendLine($"LOWER(ISNULL(a.[{c.LeftColumn}],'')) = LOWER(ISNULL(b.[{c.RightColumn}],''))")
-                Case ComparisionType.NumberEquals
-                    _sb.AppendLine($"CONVERT(DECIMAL(14,{c.Percision}), ISNULL(a.[{c.LeftColumn}],0)) = CONVERT(DECIMAL(14,{c.Percision}), ISNULL(b.[{c.RightColumn}],0))")
-                Case ComparisionType.DateEquals
-                    _sb.AppendLine($"CONVERT(DATE, a.[{c.LeftColumn}]) = CONVERT(DATE, b.[{c.RightColumn}])")
-                Case ComparisionType.DateTimeEquals
-                    _sb.AppendLine($"CONVERT(DATETIME, a.[{c.LeftColumn}]) = CONVERT(DATETIME, b.[{c.RightColumn}])")
-            End Select
-            isFirst = False
-        Next
+        _sb.AppendLine(MakeWhereComparision(recon.CompletenessComparisions))
+
+
         If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.Where) And Not isAggA Then
             _sb.AppendLine($"AND {recon.LeftReconSource.Where.Replace("x!", "a")}")
         End If
@@ -185,11 +175,11 @@ Public Class Reconciliation
         End If
         If isAggA Then
             _sb.AppendLine("AND")
-            _sb.AppendLine(MakeNotExists(recon, "Match", "a"))
+            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Match", "a"))
         End If
         If isAggB Then
             _sb.AppendLine("AND")
-            _sb.AppendLine(MakeNotExists(recon, "Match", "b"))
+            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Match", "b"))
 
         End If
         _sb.AppendLine()
@@ -197,13 +187,47 @@ Public Class Reconciliation
         Return _sb.ToString
     End Function
 
-    Private Shared Function MakeGroupBy(reconSource As ReconSource, cteTable As String, aorb As String) As String
+    Private Shared Function MakeWhereComparision(completenessComparisions As List(Of Comparision)) As String
+        Dim isFirst As Boolean = True
+        Dim cpc As New StringBuilder
+        For Each c As Comparision In completenessComparisions
+            If Not isFirst Then
+                cpc.Append("And ")
+            End If
+            Dim lCol As String = $"a.[{c.LeftColumn}]"
+            Dim rCol As String = $"b.[{c.RightColumn}]"
+            If Not String.IsNullOrWhiteSpace(c.RightFunction) Then
+                'RightFunction="SUBSTRING(b.[{c.RightColumn}], 11,  LEN(b.[{c.RightColumn}]) -10)"
+                rCol = c.RightFunction.Replace("{RightColumn}", rCol)
+            End If
+            Select Case c.ComparisionTest
+                Case ComparisionType.TextCaseEquals
+                    cpc.AppendLine($"ISNULL({lCol},'') = ISNULL({rCol},'')")
+                Case ComparisionType.TextEquals
+                    cpc.AppendLine($"LOWER(ISNULL({lCol},'')) = LOWER(ISNULL({rCol},''))")
+                Case ComparisionType.NumberEquals
+                    cpc.AppendLine($"CONVERT(DECIMAL(14,{c.Percision}), ISNULL({lCol},0)) = CONVERT(DECIMAL(14,{c.Percision}), ISNULL({rCol},0))")
+                Case ComparisionType.DateEquals
+                    cpc.AppendLine($"CONVERT(DATE, {lCol}) = CONVERT(DATE, {rCol})")
+                Case ComparisionType.DateTimeEquals
+                    cpc.AppendLine($"CONVERT(DATETIME, {lCol}) = CONVERT(DATETIME, {rCol})")
+            End Select
+            isFirst = False
+        Next
+        Return cpc.ToString
+    End Function
+
+    Private Shared Function MakeGroupBy(reconSource As ReconSource, cteTable As String, aorb As String, isWITH As Boolean) As String
         Dim isFirst As Boolean = True
         Dim sb As New StringBuilder 'don't use _sb
         sb.AppendLine()
 
         For Each agg As Aggregate In reconSource.Aggregations 'Only Tested for one
-            sb.AppendLine($";WITH {cteTable} AS")
+            If isWITH Then
+                sb.AppendLine($";WITH {cteTable} AS")
+            Else
+                sb.AppendLine($",{cteTable} AS")
+            End If
             sb.AppendLine("(")
             sb.AppendLine("SELECT")
             sb.AppendLine(MakeGroupByColumns(agg.GroupByColumns, aorb))
@@ -237,33 +261,60 @@ Public Class Reconciliation
         'Return gb.ToString
     End Function
     Public Shared Function GetLeftSelect(recon As Reconciliation) As String
+        Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing)
 
         _sb.Clear()
-        _sb.AppendLine("IF(OBJECT_ID('Rekonator..[Left]') IS NOT NULL) DROP TABLE [Left];")
+        _sb.AppendLine("IF(OBJECT_ID('Rekonator.[dbo].[Left]') IS NOT NULL) DROP TABLE [Left];")
         _sb.AppendLine()
-        _sb.AppendLine("SELECT a.*")
-        _sb.AppendLine("INTO [Left]")
-        _sb.AppendLine($"FROM [dbo].[{recon.LeftReconSource.ReconTable}] a")
-        _sb.AppendLine("WHERE")
-        _sb.AppendLine(MakeNotExists(recon, "Match", "a"))
-        _sb.AppendLine("AND")
-        _sb.AppendLine(MakeNotExists(recon, "Differ", "a"))
-        _sb.AppendLine()
-        _sb.AppendLine("SELECT * FROM [Left] a")
-        If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.Where) And recon.LeftReconSource.Aggregations IsNot Nothing Then
-            _sb.AppendLine($"WHERE {recon.LeftReconSource.Where.Replace("x!.", "a.")}")
+
+        If isAggA Then
+            _sb.AppendLine("SELECT")
+            _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a"))
+            For Each aop As AggregateOperation In recon.LeftReconSource.Aggregations(0).AggregateOperations
+                _sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}(a.[{aop.SourceColumn}])")
+            Next
+            _sb.AppendLine("INTO [Left]")
+            _sb.AppendLine($"FROM [dbo].[{recon.LeftReconSource.ReconTable}] a")
+            _sb.AppendLine("WHERE")
+            If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.Where) Then
+                _sb.AppendLine($"{recon.LeftReconSource.Where.Replace("x!.", "a.")}")
+                _sb.AppendLine("AND")
+            End If
+            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Match", "a"))
+            _sb.AppendLine("AND")
+            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Differ", "a"))
+            _sb.AppendLine("GROUP BY ")
+            _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a"))
+            _sb.AppendLine()
+            _sb.AppendLine("SELECT * FROM [Left] a")
+        Else
+            _sb.AppendLine("SELECT a.*")
+            _sb.AppendLine("INTO [Left]")
+            _sb.AppendLine($"FROM [dbo].[{recon.LeftReconSource.ReconTable}] a")
+            _sb.AppendLine("WHERE")
+            _sb.AppendLine("NOT EXISTS (SELECT * FROM [Match] m WHERE m.IdA = a.rekonid)")
+            _sb.AppendLine("AND")
+            _sb.AppendLine("NOT EXISTS (SELECT * FROM [Differ] d WHERE d.IdA = a.rekonid)")
+            _sb.AppendLine()
+            _sb.AppendLine("SELECT * FROM [Left] a")
+            If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.Where) Then
+                _sb.AppendLine($"WHERE {recon.LeftReconSource.Where.Replace("x!.", "a.")}")
+            End If
         End If
         Return _sb.ToString
     End Function
     Public Shared Function GetRightSelect(recon As Reconciliation) As String
         Dim isAggB As Boolean = (recon.RightReconSource.Aggregations IsNot Nothing)
         _sb.Clear()
-        _sb.AppendLine("IF(OBJECT_ID('Rekonator..[Right]') IS NOT NULL) DROP TABLE [Right];")
+        _sb.AppendLine("IF(OBJECT_ID('Rekonator.[dbo].[Right]') IS NOT NULL) DROP TABLE [Right];")
         _sb.AppendLine()
 
         If isAggB Then
             _sb.AppendLine("SELECT")
             _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b"))
+            For Each aop As AggregateOperation In recon.RightReconSource.Aggregations(0).AggregateOperations
+                _sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}(b.[{aop.SourceColumn}])")
+            Next
             _sb.AppendLine("INTO [Right]")
             _sb.AppendLine($"FROM [dbo].[{recon.RightReconSource.ReconTable}] b")
             _sb.AppendLine("WHERE")
@@ -271,9 +322,9 @@ Public Class Reconciliation
                 _sb.AppendLine($"{recon.RightReconSource.Where.Replace("x!.", "b.")}")
                 _sb.AppendLine("AND")
             End If
-            _sb.AppendLine(MakeNotExists(recon, "Match", "b"))
+            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Match", "b"))
             _sb.AppendLine("AND")
-            _sb.AppendLine(MakeNotExists(recon, "Differ", "b"))
+            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Differ", "b"))
             _sb.AppendLine("GROUP BY ")
             _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b"))
             _sb.AppendLine()
@@ -283,9 +334,9 @@ Public Class Reconciliation
             _sb.AppendLine("INTO [Right]")
             _sb.AppendLine($"FROM [dbo].[{recon.RightReconSource.ReconTable}] b")
             _sb.AppendLine("WHERE")
-            _sb.AppendLine("NOT EXISTS (SELECT * FROM [Match] m WHERE {m.IdB = b.rekonid)")
+            _sb.AppendLine("NOT EXISTS (SELECT * FROM [Match] m WHERE m.IdB = b.rekonid)")
             _sb.AppendLine("AND")
-            _sb.AppendLine("NOT EXISTS (SELECT * FROM [Differ] d WHERE {d.IdB = b.rekonid)")
+            _sb.AppendLine("NOT EXISTS (SELECT * FROM [Differ] d WHERE d.IdB = b.rekonid)")
             _sb.AppendLine()
             _sb.AppendLine("SELECT * FROM [Right] b")
             If Not String.IsNullOrWhiteSpace(recon.RightReconSource.Where) Then
@@ -299,7 +350,7 @@ Public Class Reconciliation
 
     End Function
 
-    Private Shared Function MakeNotExists(recon As Reconciliation, tableName As String, aorb As String) As String
+    Private Shared Function MakeNotExists2(recon As Reconciliation, tableName As String, aorb As String) As String
         'use aorb.  a for left, b for right.  don't use isggA or isggB since left won't have b alias and right won't have a alias
         Dim isFirst As Boolean = True
         Dim sb As New StringBuilder 'don't use _sb
@@ -336,6 +387,27 @@ Public Class Reconciliation
         Return sb.ToString
     End Function
 
+    Private Shared Function MakeNotExists1(reconSource As ReconSource, tableName As String, aorb As String) As String
+        'use aorb.  a for left, b for right.  don't use isggA or isggB since left won't have b alias and right won't have a alias
+        Dim isFirst As Boolean = True
+        Dim sb As New StringBuilder 'don't use _sb
+        Dim mord As String = Left(tableName, 1).ToLower
+
+        sb.Append($"NOT EXISTS (SELECT * FROM [{tableName}] {mord} WHERE ")
+        isFirst = True
+        For Each agg As Aggregate In reconSource.Aggregations
+            For Each gbc In agg.GroupByColumns
+                If Not isFirst Then
+                    sb.Append("AND ")
+                End If
+                sb.AppendLine($"{mord}.[{gbc}] = {aorb}.[{gbc}]")
+                isFirst = False
+            Next
+        Next
+        sb.AppendLine(")")
+
+        Return sb.ToString
+    End Function
 
 
 End Class

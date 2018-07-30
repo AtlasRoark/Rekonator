@@ -8,6 +8,10 @@ Public Class CompareMethod
     Public Shared Sub Add(name As String, testName As CompareMethodDelegate)
         CompareMethods.Add(New CompareMethod With {.Name = name, .Method = testName})
     End Sub
+
+    Public Shared Sub Clear()
+        CompareMethods.Clear()
+    End Sub
     Public Shared Function GetMethod(operationName As String) As CompareMethod
         Return CompareMethods.Where(Function(w) w.Name = operationName).FirstOrDefault
     End Function

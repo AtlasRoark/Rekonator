@@ -4,6 +4,8 @@ Public Class Comparision
     Property RightColumn As String
     Property ComparisionTest As ComparisionType
     Property Percision As Integer = 0
+    Property LeftFunction As String
+    Property RightFunction As String
     'Property ComparisionOption As Integer = 0
     'Property ComparisionMethod As CompareMethod
 
