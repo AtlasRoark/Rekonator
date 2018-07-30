@@ -149,7 +149,7 @@ Partial Class MainWindow
     End Sub
     Private Sub btnMatch_Click(sender As Object, e As RoutedEventArgs)
         MessageLog.Clear() 'Test Agg QB P/L Detail
-        Task.Factory.StartNew(Sub() Configure("Invoice Completeness")).
+        Task.Factory.StartNew(Sub() Configure("QB P/L Detail")).
                                   ContinueWith(Sub() LoadReconSources()).
                                   ContinueWith(Sub() Test())
     End Sub
@@ -172,7 +172,9 @@ Partial Class MainWindow
     End Sub
 
     Private Sub DataGridRow_MouseDoubleClick(sender As Object, e As MouseButtonEventArgs)
-        Beep()
+        Dim client As New Client
+        client.Show()
+        Me.Close()
     End Sub
 
 #End Region
@@ -353,12 +355,12 @@ Partial Class MainWindow
                 sqlParam.Add("connectionstring", "Data Source=dbvipmaster;Initial Catalog=Prod-Lahydrojet;User ID=linxlogic;Password=6a3r3a0$")
                 sqlParam.Add("schema", "lahydrojet1")
                 'sqlParam.Add("commandtext", "SELECT * FROM foo")
-                sqlParam.Add("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_accountdetail.sql")
+                sqlParam.Add("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_transdetail.sql")
                 sqlParam.Add("create", "CREATE TABLE lah_sql_accountdetail ( [GL Type] nvarchar(255), [GL Number] nvarchar(4000), [GL Account] nvarchar(255), [Reference] nvarchar(50), [Date] datetime2(7), [Amount] decimal(9,2), [TXN ID] nvarchar(4000), [Id] bigint, [Business Unit] nvarchar(255) )") 'Right click in SSMS result, change table name
                 leftRS = New ReconSource With
                     {.ReconDataSource = sqlDS,
-                    .ReconTable = "lah_sql_accountdetail",
-                    .IsLoaded = True,
+                    .ReconTable = "lah_sql_transdetail",
+                    .IsLoaded = False,
                     .Parameters = sqlParam,
                     .Aggregations = aggregates}
 
@@ -371,15 +373,15 @@ Partial Class MainWindow
                 Dim qbDS As DataSource = DataSource.GetDataSource("QuickBooks")
                 sqlParam = New Dictionary(Of String, String)
                 sqlParam.Add("request", "AppendGeneralDetailReportQueryRq")
-                sqlParam.Add("detailreporttype", "gdrtProfitAndLossDetail")
+                sqlParam.Add("detailreporttype", "gdrtTxnListByDate")
                 rightRS = New ReconSource With
                     {.ReconDataSource = qbDS,
                     .ReconTable = "lah_qb_transdetail",
-                    .IsLoaded = False,
+                    .IsLoaded = True,
                     .Parameters = sqlParam,
                     .Aggregations = aggregates}
 
-                completenessComparisions.Add(New Comparision With {.LeftColumn = "GL Account", .RightColumn = "Account", .ComparisionTest = ComparisionType.TextCaseEquals, .RightFunction = "SUBSTRING({RightColumn}, 11,  LEN({RightColumn}) -10)"})
+                completenessComparisions.Add(New Comparision With {.LeftColumn = "GL Account", .RightColumn = "Account", .ComparisionTest = ComparisionType.TextCaseEquals}) '.RightFunction = "SUBSTRING({RightColumn}, 11,  LEN({RightColumn}) -10)"
                 matchingComparisions.Add(New Comparision With {.LeftColumn = "Total", .RightColumn = "Total", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
                 Reconciliation.Add("PL Summary", leftRS, rightRS, completenessComparisions, matchingComparisions, #6/1/2018#, #6/30/2018#)
 
@@ -464,7 +466,7 @@ Partial Class MainWindow
                     .Aggregations = aggregates}
 
                 completenessComparisions.Add(New Comparision With {.LeftColumn = "TXN ID", .RightColumn = "TxnID", .ComparisionTest = ComparisionType.TextCaseEquals})
-                completenessComparisions.Add(New Comparision With {.LeftColumn = "GL Account", .RightColumn = "Account", .ComparisionTest = ComparisionType.TextCaseEquals, .RightFunction = "SUBSTRING({RightColumn}, 11,  LEN({RightColumn}) -10)"})
+                completenessComparisions.Add(New Comparision With {.LeftColumn = "GL Account", .RightColumn = "Account", .ComparisionTest = ComparisionType.TextCaseEquals})
                 matchingComparisions.Add(New Comparision With {.LeftColumn = "Total", .RightColumn = "Total", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
                 Reconciliation.Add("Test Set", leftRS, rightRS, completenessComparisions, matchingComparisions, #6/1/2018#, #6/30/2018#)
 

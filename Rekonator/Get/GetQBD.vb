@@ -26,9 +26,10 @@ Public Class GetQBD
             Dim QReport As IGeneralDetailReportQuery
 
             QReport = _msgSetRequest.AppendGeneralDetailReportQueryRq
-            QReport.GeneralDetailReportType.SetValue(ENGeneralDetailReportType.gdrtProfitAndLossDetail)
-            QReport.DisplayReport.SetValue(False)
-            QReport.ReportBasis.SetValue(ENReportBasis.rbAccrual)
+            QReport.GeneralDetailReportType.SetValue(ENGeneralDetailReportType.gdrtTxnListByDate)
+            'QReport.GeneralDetailReportType.SetValue(ENGeneralDetailReportType.gdrtProfitAndLossDetail)
+            QReport.DisplayReport.SetValue(True)
+            'QReport.ReportBasis.SetValue(ENReportBasis.rbAccrual)
             'QReport.ORReportPeriod.ReportDateMacro.SetValue(ENReportDateMacro.rdmLastQuarter)
 
             QReport.ORReportPeriod.ReportPeriod.FromReportDate.SetValue(fromDate)
@@ -41,12 +42,16 @@ Public Class GetQBD
             QReport.IncludeColumnList.Add(ENIncludeColumn.icAmount)
             QReport.IncludeColumnList.Add(ENIncludeColumn.icTxnType)
             QReport.IncludeColumnList.Add(ENIncludeColumn.icTxnID)
-            QReport.ReportAccountFilter.ORReportAccountFilter.AccountTypeFilter.SetValue(ENAccountTypeFilter.atfIncomeAndOtherIncome Or ENAccountTypeFilter.atfExpenseAndOtherExpense)
+            QReport.ReportTxnTypeFilter.TxnTypeFilterList.Add(ENTxnTypeFilter.ttfCreditMemo)
+            QReport.ReportTxnTypeFilter.TxnTypeFilterList.Add(ENTxnTypeFilter.ttfInvoice)
+            QReport.ReportTxnTypeFilter.TxnTypeFilterList.Add(ENTxnTypeFilter.ttfJournalEntry)
+            QReport.ReportTxnTypeFilter.TxnTypeFilterList.Add(ENTxnTypeFilter.ttfCheck)
             _msgSetResponse = _sessionManager.DoRequests(_msgSetRequest)
             CloseQB()
 
             Dim headerList As List(Of String) = {"Account", "Date", "Number", "Class", "Trans #", "Amount", "Type", "TxnID"}.ToList
-            Dim typeList As List(Of String) = {"String", "Date", "String", "String", "Integer", "Double", "String", "String"}.ToList
+            Dim typeList As List(Of String) = {"String", "Date", "String", "String", "Integer", "Currency", "String", "String"}.ToList
+
             _fieldCount = headerList.Count
             _sql = New SQL(reconSource.ReconTable, _fieldCount, headerList, typeList)
             If Not _sql.CreateTable() Then

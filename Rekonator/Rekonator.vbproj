@@ -73,15 +73,15 @@
     <Compile Include="IReconCompare.vb" />
     <Compile Include="Models\MessageEntry.vb" />
     <Compile Include="SQL.vb" />
+    <Compile Include="View\Client.xaml.vb">
+      <DependentUpon>Client.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\DataSourcePage.xaml.vb">
       <DependentUpon>DataSourcePage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Get\GetSQL.vb" />
     <Compile Include="View\MainWindow.xaml.vb">
       <DependentUpon>MainWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="View\ReconWindow.xaml.vb">
-      <DependentUpon>ReconWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\ValueToBrushConverter.vb" />
     <Compile Include="Application.xaml.vb">
@@ -95,15 +95,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="View\Client.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="View\DataSourcePage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="View\MainWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="View\ReconWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -193,6 +193,9 @@
     <PackageReference Include="MaterialDesignThemes.MahApps.163">
       <Version>0.0.111</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\ServiceTitan_Logo_Black_2.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

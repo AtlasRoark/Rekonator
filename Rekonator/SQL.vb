@@ -37,7 +37,7 @@ Public Class SQL
 
     Public Function GetDataTable(selectCommand) As DataTable
         Try
-            Application.Message($"Loading {selectCommand} from Rekonator")
+            'Application.Message($"Loading {selectCommand} from Rekonator")
 
             Dim adapter As New SqlDataAdapter(selectCommand, _connection)
             Dim dt As New DataTable()
@@ -118,6 +118,8 @@ Public Class SQL
                             _sb.AppendLine($"{rowList(idx)},")
                         Case "DateTime"
                             _sb.AppendLine($"'{CDate(rowList(idx)).ToString("yyyy-MM-dd hh:mm:ss")}',")
+                        Case "Date"
+                            _sb.AppendLine($"'{CDate(rowList(idx)).ToString("yyyy-MM-dd")}',")
                         Case "String"
                             _sb.AppendLine($"'{rowList(idx).ToString.Replace("'", "''")}',")
                     End Select
