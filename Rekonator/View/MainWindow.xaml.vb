@@ -1,17 +1,13 @@
-﻿Imports System.Collections.Concurrent
+﻿Imports System.Collections.ObjectModel
 Imports System.ComponentModel
 Imports System.Data
-Imports System.Threading
-Imports Dynamitey.Dynamic
+Imports Rekonator
 
 Partial Class MainWindow
     Implements INotifyPropertyChanged
 
     Private _solutionPath As String = String.Empty
-    Private _solution As Solution 'active solution
-    Private _reconciliation As Reconciliation ' active reconciliation from _solution
     'Cant do notify prop change on datatables.  
-    Private _left As New DataTable
     Private _right As New DataTable
     Private _leftDetails As New DataTable
     Private _rightDetails As New DataTable
@@ -31,46 +27,64 @@ Partial Class MainWindow
     <DebuggerStepThrough>
     Public Sub CheckPropertyName(propertyName As String)
         If TypeDescriptor.GetProperties(Me)(propertyName) Is Nothing Then
-            Throw New Exception(String.Format("Count not find property: {0}", propertyName))
+            Throw New Exception($"Could not find property: {propertyName}")
         End If
     End Sub
 #End Region
 
-#Region "-- Setting Model Properties --"
-    Public Property DataSources As List(Of DataSource)
+#Region "-- App Setting Properties --"
+    Public Property AppViewModel As AppViewModel
         Get
-            DataSources = DataSource.DataSources
+            AppViewModel = _appViewModel
         End Get
-        Set(value As List(Of DataSource))
-            DataSource.DataSources = value
-            OnPropertyChanged("DataSources")
+        Set(value As AppViewModel)
+            _appViewModel = value
         End Set
     End Property
-    'Private _dataSources As List(Of DataSource)
-    Public Property Translations As List(Of Translation)
-        Get
-            Translations = _translations
-        End Get
-        Set(value As List(Of Translation))
-            _translations = value
-            OnPropertyChanged("Translations")
-        End Set
-    End Property
-    Private _translations As List(Of Translation)
-
-    Public Property CompareMethods As List(Of CompareMethod)
-        Get
-            CompareMethods = _compareMethods
-        End Get
-        Set(value As List(Of CompareMethod))
-            _compareMethods = value
-        End Set
-    End Property
-    Private _compareMethods As List(Of CompareMethod)
-
+    Private _appViewModel As AppViewModel
 #End Region
 
 #Region "-- Solution Properties --"
+
+    Public Property ObsSolution As ObservableCollection(Of Reconciliation) 'active solution
+        Get
+            ObsSolution = _obsSolution
+        End Get
+        Set(value As ObservableCollection(Of Reconciliation))
+            _obsSolution = value
+            Reconciliation = _solution.Reconciliations(0)
+            Me.DataContext = Reconciliation
+            Me.dspLeft.DataContext = _solution.Reconciliations(0).LeftReconSource
+            Me.dspRight.DataContext = _solution.Reconciliations(0).RightReconSource
+            OnPropertyChanged("ObsSolution")
+        End Set
+    End Property
+    Private _obsSolution As ObservableCollection(Of Reconciliation)
+    Public Property Solution As Solution 'active solution
+        Get
+            Solution = _solution
+        End Get
+        Set(value As Solution)
+            _solution = value
+            Reconciliation = _solution.Reconciliations(0)
+            Me.DataContext = Me
+            Me.dspLeft.DataContext = _solution.Reconciliations(0).LeftReconSource
+            Me.dspRight.DataContext = _solution.Reconciliations(0).RightReconSource
+            OnPropertyChanged("Reconciliation")
+        End Set
+    End Property
+    Private _solution As Solution
+
+    Public Property Reconciliation As Reconciliation  ' active reconciliation from _solution
+        Get
+            Reconciliation = _reconciliation
+        End Get
+        Set(value As Reconciliation)
+            _reconciliation = value
+        End Set
+    End Property
+    Private _reconciliation As Reconciliation
+
     Public Property LeftSet As DataView
         Get
             LeftSet = _left.AsDataView
@@ -79,6 +93,7 @@ Partial Class MainWindow
             OnPropertyChanged("LeftSet")
         End Set
     End Property
+    Private _left As New DataTable
 
     Public Property RightSet As DataView
         Get
@@ -106,7 +121,10 @@ Partial Class MainWindow
             OnPropertyChanged("MatchSet")
         End Set
     End Property
+
+
 #End Region
+
     Public Property MessageLog As List(Of MessageEntry)
         Get
             MessageLog = _messages
@@ -117,10 +135,6 @@ Partial Class MainWindow
     End Property
     Private _messages As New List(Of MessageEntry)
 
-    Private Enum Sets
-        Left
-        Right
-    End Enum
 #Region "-- Commands --"
     Private Sub btnOpenFile_Click(sender As Object, e As RoutedEventArgs)
         Using sd As New SystemDialog
@@ -139,19 +153,22 @@ Partial Class MainWindow
 
     Private Sub btnLeft_Click(sender As Object, e As RoutedEventArgs)
         MessageLog.Clear()
-        _reconciliation.LeftReconSource.IsLoaded = False
-        btnMatch_Click(sender, e)
+        '_reconciliation.LeftReconSource.IsLoaded = False
+        'btnMatch_Click(sender, e)
     End Sub
     Private Sub btnRight_Click(sender As Object, e As RoutedEventArgs)
         MessageLog.Clear()
-        _reconciliation.RightReconSource.IsLoaded = False
-        btnMatch_Click(sender, e)
+        '_reconciliation.RightReconSource.IsLoaded = False
+        'btnMatch_Click(sender, e)
     End Sub
     Private Sub btnMatch_Click(sender As Object, e As RoutedEventArgs)
         MessageLog.Clear() 'Test Agg QB P/L Detail
-        Task.Factory.StartNew(Sub() Configure("QB P/L Detail")).
-                                  ContinueWith(Sub() LoadReconSources()).
+        Task.Factory.StartNew(Sub() LoadReconSources()).
                                   ContinueWith(Sub() Test())
+
+        'Task.Factory.StartNew(Sub() Configure("QB P/L Detail")).
+        '                          ContinueWith(Sub() LoadReconSources()).
+        '                          ContinueWith(Sub() Test())
     End Sub
 
     Private Sub DataGridRow_MouseRightButtonDown(sender As Object, e As MouseButtonEventArgs)
@@ -183,13 +200,13 @@ Partial Class MainWindow
 
         ' This call is required by the designer.
         InitializeComponent()
-        DataContext = Me
+        'DataContext = Me
         Application.MessageFunc = AddressOf AddMessage
         Using m As New Mock
-            Dim sm As SettingsModel = m.MockLoadSettings() 'Model for App Settings
-            DataSources = sm.Datasources
-
-            '_solution = Task.Run(Function() m.MockLoadSolutionAsync(Me)).GetAwaiter().GetResult() 'Model for Solution
+            AppViewModel = m.MockLoadSettings(Me) 'Model for App Settings
+            dspLeft.CBDataSources.DataContext = AppViewModel
+            dspRight.CBDataSources.DataContext = AppViewModel
+            Solution = Task.Run(Function() m.MockLoadSolutionAsync(1)).GetAwaiter().GetResult() 'Model for Solution
         End Using
 
     End Sub
@@ -204,13 +221,18 @@ Partial Class MainWindow
 
         If _left.Rows.Count = 0 Or _right.Rows.Count = 0 Then Exit Sub
 
-
         Using sql As New SQL
+            sql.DropTables({"Left", "Right", "Match", "Differ"})
+        End Using
+        Using sql As New SQL
+
             _match = sql.GetDataTable(Reconciliation.GetMatchSelect(_reconciliation))
             MatchSet = _match.AsDataView
             _differ = sql.GetDataTable(Reconciliation.GetDifferSelect(_reconciliation))
+            If _differ.AsDataView Is Nothing Then Exit Sub
             DifferSet = _match.AsDataView
             _left = sql.GetDataTable(Reconciliation.GetLeftSelect(_reconciliation))
+            If _left.AsDataView Is Nothing Then Exit Sub
             LeftSet = _left.AsDataView
             _right = sql.GetDataTable(Reconciliation.GetRightSelect(_reconciliation))
             RightSet = _right.AsDataView
@@ -341,9 +363,10 @@ Partial Class MainWindow
         Dim aggregates As List(Of Aggregate)
         Dim leftRS As ReconSource = Nothing
         Dim rightRS As ReconSource = Nothing
-        Reconciliation.Clear
+        Reconciliation.Clear()
+
         Select Case testName
-            Case "Invoice Completeness"
+            Case "DMR1"
                 'Left
                 aggOps = New List(Of AggregateOperation)
                 aggOps.Add(New AggregateOperation With {.SourceColumn = "Amount", .AggregateColumn = "Total", .Operation = AggregateOperation.AggregateFunction.Sum})
@@ -351,17 +374,17 @@ Partial Class MainWindow
                 aggregates.Add(New Aggregate With {.GroupByColumns = {"GL Account"}, .AggregateOperations = aggOps})
 
                 Dim sqlDS As DataSource = DataSource.GetDataSource("SQL")
-                Dim sqlParam As New Dictionary(Of String, String)
-                sqlParam.Add("connectionstring", "Data Source=dbvipmaster;Initial Catalog=Prod-Lahydrojet;User ID=linxlogic;Password=6a3r3a0$")
-                sqlParam.Add("schema", "lahydrojet1")
-                'sqlParam.Add("commandtext", "SELECT * FROM foo")
-                sqlParam.Add("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_transdetail.sql")
-                sqlParam.Add("create", "CREATE TABLE lah_sql_accountdetail ( [GL Type] nvarchar(255), [GL Number] nvarchar(4000), [GL Account] nvarchar(255), [Reference] nvarchar(50), [Date] datetime2(7), [Amount] decimal(9,2), [TXN ID] nvarchar(4000), [Id] bigint, [Business Unit] nvarchar(255) )") 'Right click in SSMS result, change table name
+                Dim sqlParams As New List(Of Parameter)
+                sqlParams.AddParameter("connectionstring", "Data Source=dbvipmaster;Initial Catalog=Prod-Lahydrojet;User ID=linxlogic;Password=6a3r3a0$")
+                sqlParams.AddParameter("schema", "lahydrojet1")
+                'sqlParams.AddParameter("commandtext", "SELECT * FROM foo")
+                sqlParams.AddParameter("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_transdetail.sql")
+                sqlParams.AddParameter("create", "CREATE TABLE #temptable ( [HV_DCR_DemandCallsRun] bigint, [HV_DemandRevenue] decimal(12,2), [HV_DCR_NoClubVisits] bigint, [HV_DCR_ClubRevenue] bigint, [HV_DCR_NoOfMaintenanceVisits] bigint, [HV_DCR_MaintenanceRevenue] decimal(12,2), [HV_ZeroRevenueCalls] bigint, [HV_DiagnosticFeeOnlyCalls] bigint, [PB_DCR_DemandCallsRun] bigint, [PB_DemandRevenue] decimal(12,2), [PB_DCR_NoClubVisits] bigint, [PB_DCR_ClubRevenue] bigint, [PB_DCR_NoOfMaintenanceVisits] bigint, [PB_DCR_MaintenanceRevenue] decimal(12,2), [PB_ZeroRevenueCalls] bigint, [PB_DiagnosticFeeOnlyCalls] bigint, [EL_DCR_DemandCallsRun] bigint, [EL_DemandRevenue] decimal(12,2), [EL_DCR_NoClubVisits] bigint, [EL_DCR_ClubRevenue] bigint, [EL_DCR_NoOfMaintenanceVisits] bigint, [EL_DCR_MaintenanceRevenue] decimal(12,2), [EL_ZeroRevenueCalls] bigint, [EL_DiagnosticFeeOnlyCalls] bigint )") 'Right click in SSMS result, change table name
                 leftRS = New ReconSource With
                     {.ReconDataSource = sqlDS,
                     .ReconTable = "lah_sql_transdetail",
                     .IsLoaded = False,
-                    .Parameters = sqlParam,
+                    .Parameters = sqlParams,
                     .Aggregations = aggregates}
 
                 'Right
@@ -370,21 +393,23 @@ Partial Class MainWindow
                 aggregates = New List(Of Aggregate)
                 aggregates.Add(New Aggregate With {.GroupByColumns = {"Account"}, .AggregateOperations = aggOps})
 
-                Dim qbDS As DataSource = DataSource.GetDataSource("QuickBooks")
-                sqlParam = New Dictionary(Of String, String)
-                sqlParam.Add("request", "AppendGeneralDetailReportQueryRq")
-                sqlParam.Add("detailreporttype", "gdrtTxnListByDate")
+                Dim qbDS As DataSource = DataSource.GetDataSource("SQL")
+                sqlParams = New List(Of Parameter)
+                sqlParams.AddParameter("connectionstring", "Data Source=dbvipmaster;Initial Catalog=Prod-Lahydrojet;User ID=linxlogic;Password=6a3r3a0$")
+                sqlParams.AddParameter("schema", "lahydrojet1")
+                'sqlParams.AddParameter("commandtext", "SELECT * FROM foo")
+                sqlParams.AddParameter("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_transdetail.sql")
+                sqlParams.AddParameter("create", "CREATE TABLE #temptable ( [HV_DCR_DemandCallsRun] bigint, [HV_DemandRevenue] decimal(12,2), [HV_DCR_NoClubVisits] bigint, [HV_DCR_ClubRevenue] bigint, [HV_DCR_NoOfMaintenanceVisits] bigint, [HV_DCR_MaintenanceRevenue] decimal(12,2), [HV_ZeroRevenueCalls] bigint, [HV_DiagnosticFeeOnlyCalls] bigint, [PB_DCR_DemandCallsRun] bigint, [PB_DemandRevenue] decimal(12,2), [PB_DCR_NoClubVisits] bigint, [PB_DCR_ClubRevenue] bigint, [PB_DCR_NoOfMaintenanceVisits] bigint, [PB_DCR_MaintenanceRevenue] decimal(12,2), [PB_ZeroRevenueCalls] bigint, [PB_DiagnosticFeeOnlyCalls] bigint, [EL_DCR_DemandCallsRun] bigint, [EL_DemandRevenue] decimal(12,2), [EL_DCR_NoClubVisits] bigint, [EL_DCR_ClubRevenue] bigint, [EL_DCR_NoOfMaintenanceVisits] bigint, [EL_DCR_MaintenanceRevenue] decimal(12,2), [EL_ZeroRevenueCalls] bigint, [EL_DiagnosticFeeOnlyCalls] bigint )") 'Right click in SSMS result, change table name
                 rightRS = New ReconSource With
                     {.ReconDataSource = qbDS,
-                    .ReconTable = "lah_qb_transdetail",
+                    .ReconTable = "DMR1new",
                     .IsLoaded = True,
-                    .Parameters = sqlParam,
+                    .Parameters = sqlParams,
                     .Aggregations = aggregates}
 
                 completenessComparisions.Add(New Comparision With {.LeftColumn = "GL Account", .RightColumn = "Account", .ComparisionTest = ComparisionType.TextCaseEquals}) '.RightFunction = "SUBSTRING({RightColumn}, 11,  LEN({RightColumn}) -10)"
                 matchingComparisions.Add(New Comparision With {.LeftColumn = "Total", .RightColumn = "Total", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
                 Reconciliation.Add("PL Summary", leftRS, rightRS, completenessComparisions, matchingComparisions, #6/1/2018#, #6/30/2018#)
-
             Case "P/L Summary"
                 'Left
                 aggOps = New List(Of AggregateOperation)
@@ -393,17 +418,17 @@ Partial Class MainWindow
                 aggregates.Add(New Aggregate With {.GroupByColumns = {"GL Account"}, .AggregateOperations = aggOps})
 
                 Dim sqlDS As DataSource = DataSource.GetDataSource("SQL")
-                Dim sqlParam As New Dictionary(Of String, String)
-                sqlParam.Add("connectionstring", "Data Source=dbvipmaster;Initial Catalog=Prod-Lahydrojet;User ID=linxlogic;Password=6a3r3a0$")
-                sqlParam.Add("schema", "lahydrojet1")
-                'sqlParam.Add("commandtext", "SELECT * FROM foo")
-                sqlParam.Add("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_accountdetail.sql")
-                sqlParam.Add("create", "CREATE TABLE lah_sql_accountdetail ( [GL Type] nvarchar(255), [GL Number] nvarchar(4000), [GL Account] nvarchar(255), [Reference] nvarchar(50), [Date] datetime2(7), [Amount] decimal(9,2), [TXN ID] nvarchar(4000), [Id] bigint, [Business Unit] nvarchar(255) )") 'Right click in SSMS result, change table name
+                Dim sqlParams As New List(Of Parameter)
+                sqlParams.AddParameter("connectionstring", "Data Source=dbvipmaster;Initial Catalog=Prod-Lahydrojet;User ID=linxlogic;Password=6a3r3a0$")
+                sqlParams.AddParameter("schema", "lahydrojet1")
+                'sqlParams.AddParameter("commandtext", "SELECT * FROM foo")
+                sqlParams.AddParameter("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_accountdetail.sql")
+                sqlParams.AddParameter("create", "CREATE TABLE lah_sql_accountdetail ( [GL Type] nvarchar(255), [GL Number] nvarchar(4000), [GL Account] nvarchar(255), [Reference] nvarchar(50), [Date] datetime2(7), [Amount] decimal(9,2), [TXN ID] nvarchar(4000), [Id] bigint, [Business Unit] nvarchar(255) )") 'Right click in SSMS result, change table name
                 leftRS = New ReconSource With
                     {.ReconDataSource = sqlDS,
                     .ReconTable = "lah_sql_accountdetail",
                     .IsLoaded = True,
-                    .Parameters = sqlParam,
+                    .Parameters = sqlParams,
                     .Aggregations = aggregates}
 
                 'Right
@@ -413,14 +438,14 @@ Partial Class MainWindow
                 aggregates.Add(New Aggregate With {.GroupByColumns = {"Account"}, .AggregateOperations = aggOps})
 
                 Dim qbDS As DataSource = DataSource.GetDataSource("QuickBooks")
-                sqlParam = New Dictionary(Of String, String)
-                sqlParam.Add("request", "AppendGeneralDetailReportQueryRq")
-                sqlParam.Add("detailreporttype", "gdrtProfitAndLossDetail")
+                sqlParams = New List(Of Parameter)
+                sqlParams.AddParameter("request", "AppendGeneralDetailReportQueryRq")
+                sqlParams.AddParameter("detailreporttype", "gdrtProfitAndLossDetail")
                 rightRS = New ReconSource With
                     {.ReconDataSource = qbDS,
                     .ReconTable = "lah_qb_pldetail",
                     .IsLoaded = True,
-                    .Parameters = sqlParam,
+                    .Parameters = sqlParams,
                     .Aggregations = aggregates}
 
                 completenessComparisions.Add(New Comparision With {.LeftColumn = "GL Account", .RightColumn = "Account", .ComparisionTest = ComparisionType.TextCaseEquals, .RightFunction = "SUBSTRING({RightColumn}, 11,  LEN({RightColumn}) -10)"})
@@ -435,17 +460,17 @@ Partial Class MainWindow
                 aggregates.Add(New Aggregate With {.GroupByColumns = {"TXN ID", "GL Account"}, .AggregateOperations = aggOps})
 
                 Dim sqlDS As DataSource = DataSource.GetDataSource("SQL")
-                Dim sqlParam As New Dictionary(Of String, String)
-                sqlParam.Add("connectionstring", "Data Source=dbvipmaster;Initial Catalog=Prod-Lahydrojet;User ID=linxlogic;Password=6a3r3a0$")
-                sqlParam.Add("schema", "lahydrojet1")
-                'sqlParam.Add("commandtext", "SELECT * FROM foo")
-                sqlParam.Add("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_accountdetail.sql")
-                sqlParam.Add("create", "CREATE TABLE lah_sql_accountdetail ( [GL Type] nvarchar(255), [GL Number] nvarchar(4000), [GL Account] nvarchar(255), [Reference] nvarchar(50), [Date] datetime2(7), [Amount] decimal(9,2), [TXN ID] nvarchar(4000), [Id] bigint, [Business Unit] nvarchar(255) )") 'Right click in SSMS result, change table name
+                Dim sqlParams As New List(Of Parameter)
+                sqlParams.AddParameter("connectionstring", "Data Source=dbvipmaster;Initial Catalog=Prod-Lahydrojet;User ID=linxlogic;Password=6a3r3a0$")
+                sqlParams.AddParameter("schema", "lahydrojet1")
+                'sqlParams.AddParameter("commandtext", "SELECT * FROM foo")
+                sqlParams.AddParameter("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_accountdetail.sql")
+                sqlParams.AddParameter("create", "CREATE TABLE lah_sql_accountdetail ( [GL Type] nvarchar(255), [GL Number] nvarchar(4000), [GL Account] nvarchar(255), [Reference] nvarchar(50), [Date] datetime2(7), [Amount] decimal(9,2), [TXN ID] nvarchar(4000), [Id] bigint, [Business Unit] nvarchar(255) )") 'Right click in SSMS result, change table name
                 leftRS = New ReconSource With
                     {.ReconDataSource = sqlDS,
                     .ReconTable = "lah_sql_accountdetail",
-                    .IsLoaded = True,
-                    .Parameters = sqlParam,
+                    .IsLoaded = False,
+                    .Parameters = sqlParams,
                     .Aggregations = aggregates}
 
                 'Right
@@ -455,14 +480,14 @@ Partial Class MainWindow
                 aggregates.Add(New Aggregate With {.GroupByColumns = {"TxnID", "Account"}, .AggregateOperations = aggOps})
 
                 Dim qbDS As DataSource = DataSource.GetDataSource("QuickBooks")
-                sqlParam = New Dictionary(Of String, String)
-                sqlParam.Add("request", "AppendGeneralDetailReportQueryRq")
-                sqlParam.Add("detailreporttype", "gdrtProfitAndLossDetail")
+                sqlParams = New List(Of Parameter)
+                sqlParams.AddParameter("request", "AppendGeneralDetailReportQueryRq")
+                sqlParams.AddParameter("detailreporttype", "gdrtProfitAndLossDetail")
                 rightRS = New ReconSource With
                     {.ReconDataSource = qbDS,
                     .ReconTable = "lah_qb_pldetail",
                     .IsLoaded = True,
-                    .Parameters = sqlParam,
+                    .Parameters = sqlParams,
                     .Aggregations = aggregates}
 
                 completenessComparisions.Add(New Comparision With {.LeftColumn = "TXN ID", .RightColumn = "TxnID", .ComparisionTest = ComparisionType.TextCaseEquals})
@@ -473,29 +498,29 @@ Partial Class MainWindow
             Case "Account Detail"
                 'Left
                 Dim sqlDS As DataSource = DataSource.GetDataSource("SQL")
-                Dim sqlParam As New Dictionary(Of String, String)
-                sqlParam.Add("connectionstring", "Data Source=dbvipmaster;Initial Catalog=Prod-Lahydrojet;User ID=linxlogic;Password=6a3r3a0$")
-                sqlParam.Add("schema", "lahydrojet1")
-                'sqlParam.Add("commandtext", "SELECT * FROM foo")
-                sqlParam.Add("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_accountdetail.sql")
-                sqlParam.Add("create", "CREATE TABLE lah_sql_accountdetail ( [GL Name] nvarchar(255), [GL Number] nvarchar(4000), [Name] nvarchar(255), [Number] nvarchar(50), [InvoicedOn] datetime2(7), [Total] decimal(9,2), [ExportId] nvarchar(4000), [Id] bigint, [Active] bit )") 'Right click in SSMS result
+                Dim sqlParams As New List(Of Parameter)
+                sqlParams.AddParameter("connectionstring", "Data Source=dbvipmaster;Initial Catalog=Prod-Lahydrojet;User ID=linxlogic;Password=6a3r3a0$")
+                sqlParams.AddParameter("schema", "lahydrojet1")
+                'sqlParams.AddParameter("commandtext", "SELECT * FROM foo")
+                sqlParams.AddParameter("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_accountdetail.sql")
+                sqlParams.AddParameter("create", "CREATE TABLE lah_sql_accountdetail ( [GL Name] nvarchar(255), [GL Number] nvarchar(4000), [Name] nvarchar(255), [Number] nvarchar(50), [InvoicedOn] datetime2(7), [Total] decimal(9,2), [ExportId] nvarchar(4000), [Id] bigint, [Active] bit )") 'Right click in SSMS result
                 leftRS = New ReconSource With
                     {.ReconDataSource = sqlDS,
                     .ReconTable = "lah_sql_accountdetail",
                     .IsLoaded = True,
-                    .Parameters = sqlParam}
+                    .Parameters = sqlParams}
 
                 'Right
 
                 Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
-                Dim excelParam As New Dictionary(Of String, String)
-                excelParam.Add("FilePath", "C:\Users\Peter Grillo\Downloads\1_08776f78-eaac-468c-89d4-aeedf5b65673_AccountingDetail.xlsx")
-                excelParam("Worksheet") = "Combined"
+                Dim excelParams As New List(Of Parameter)
+                excelParams.AddParameter("FilePath", "C:\Users\Peter Grillo\Downloads\1_08776f78-eaac-468c-89d4-aeedf5b65673_AccountingDetail.xlsx")
+                excelParams.AddParameter("Worksheet", "Combined")
                 rightRS = New ReconSource With
                     {.ReconDataSource = excelDS,
                     .ReconTable = "lah_accountdetail",
                     .IsLoaded = True,
-                    .Parameters = excelParam}
+                    .Parameters = excelParams}
 
                 completenessComparisions.Add(New Comparision With {.LeftColumn = "ExportID", .RightColumn = "Item ID", .ComparisionTest = ComparisionType.TextCaseEquals})
                 matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Name", .RightColumn = "Item Name", .ComparisionTest = ComparisionType.TextEquals})
@@ -509,23 +534,23 @@ Partial Class MainWindow
 
                 'Test 1
                 Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
-                Dim excelParam As New Dictionary(Of String, String)
-                excelParam.Add("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
-                excelParam.Add("Worksheet", "ST Items")
+                Dim excelParams As New List(Of Parameter)
+                excelParams.AddParameter("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
+                excelParams.AddParameter("Worksheet", "ST Items")
                 leftRS = New ReconSource With
                     {.ReconDataSource = excelDS,
                     .ReconTable = "aset",
                     .IsLoaded = False,
-                    .Parameters = excelParam}
+                    .Parameters = excelParams}
 
-                excelParam = New Dictionary(Of String, String)
-                excelParam.Add("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
-                excelParam("Worksheet") = "Item"
+                excelParams = New List(Of Parameter)
+                excelParams.AddParameter("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
+                excelParams.AddParameter("Worksheet", "Item")
                 rightRS = New ReconSource With
                     {.ReconDataSource = excelDS,
                     .ReconTable = "bset",
                     .IsLoaded = False,
-                    .Parameters = excelParam}
+                    .Parameters = excelParams}
 
                 completenessComparisions.Add(New Comparision With {.LeftColumn = "ST Export ID", .RightColumn = "Item ID", .ComparisionTest = ComparisionType.TextCaseEquals})
                 matchingComparisions.Add(New Comparision With {.LeftColumn = "ST Item Name", .RightColumn = "Item Name", .ComparisionTest = ComparisionType.TextEquals})
@@ -536,25 +561,25 @@ Partial Class MainWindow
                 Reconciliation.Add("Test Set", leftRS, rightRS, completenessComparisions, matchingComparisions)
             Case "Huber"
                 Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
-                Dim excelParam As New Dictionary(Of String, String)
-                excelParam.Add("FilePath", "C:\Users\Peter Grillo\Downloads\March Activity.xls")
-                excelParam.Add("Worksheet", "ST Inv")
+                Dim excelParams As New List(Of Parameter)
+                excelParams.AddParameter("FilePath", "C:\Users\Peter Grillo\Downloads\March Activity.xls")
+                excelParams.AddParameter("Worksheet", "ST Inv")
                 leftRS = New ReconSource With
                     {.ReconDataSource = excelDS,
                     .ReconTable = "stinvoice",
                     .IsLoaded = True,
-                    .Parameters = excelParam,
-                    .Where = "NOT (ISNULL(x!.[ExportId], '')='' OR x!.[ExportId]='0')"}
+                    .Parameters = excelParams,
+                    .WhereClause = "NOT (ISNULL(x!.[ExportId], '')='' OR x!.[ExportId]='0')"}
 
-                excelParam = New Dictionary(Of String, String)
-                excelParam.Add("FilePath", "C:\Users\Peter Grillo\Downloads\March Activity.xls")
-                excelParam("Worksheet") = "Mar Inv"
+                excelParams = New List(Of Parameter)
+                excelParams.AddParameter("FilePath", "C:\Users\Peter Grillo\Downloads\March Activity.xls")
+                excelParams.AddParameter("Worksheet", "Mar Inv")
                 rightRS = New ReconSource With
                     {.ReconDataSource = excelDS,
                     .ReconTable = "qbinvoice",
                     .IsLoaded = True,
-                    .Parameters = excelParam,
-                    .Where = "NOT (ISNULL(x!.[SubTotal], '')='' OR x!.[SubTotal]='0')"}
+                    .Parameters = excelParams,
+                    .WhereClause = "NOT (ISNULL(x!.[SubTotal], '')='' OR x!.[SubTotal]='0')"}
 
                 completenessComparisions.Add(New Comparision With {.LeftColumn = "QB Export ID", .RightColumn = "TxnId", .ComparisionTest = ComparisionType.TextCaseEquals})
                 matchingComparisions.Add(New Comparision With {.LeftColumn = "Total", .RightColumn = "Subtotal", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
@@ -563,17 +588,18 @@ Partial Class MainWindow
             Case "Test Agg"
                 'Left
                 Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
-                Dim excelParam As New Dictionary(Of String, String)
-                excelParam.Add("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
-                excelParam.Add("Worksheet", "Agg Balance")
+                Dim excelParams As List(Of Parameter)
+                excelParams.AddParameter("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
+                excelParams.AddParameter("Worksheet", "Agg Balance")
+                Dim columns As New List(Of Column)
+                columns.AddColumns({"Customer ID", "Integer", "Balance", "Currency", "Count", "Integer", "Avg", "Single", "Test", "String"})
                 leftRS = New ReconSource With
                     {.ReconDataSource = excelDS,
                     .ReconTable = "aggbalance",
                     .IsLoaded = False,
-                    .Parameters = excelParam,
-                    .Where = "ISNULL(x!.[Balance], 0) <> 0",
-                    .Fields = {"Customer ID", "Balance", "Count", "Avg", "Test"},
-                    .Types = {"Integer", "Integer", "Currency", "Integer", "String"}
+                    .Parameters = excelParams,
+                    .WhereClause = "ISNULL(x!.[Balance], 0) <> 0",
+                    .Columns = columns
                 }
 
                 'Right
@@ -585,21 +611,22 @@ Partial Class MainWindow
                 aggregates = New List(Of Aggregate)
                 aggregates.Add(New Aggregate With {.GroupByColumns = {"Customer ID"}, .AggregateOperations = aggOps})
 
-                excelParam = New Dictionary(Of String, String)
-                excelParam.Add("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
-                excelParam("Worksheet") = "Agg Entries"
+                excelParams = New List(Of Parameter)
+                excelParams.AddParameter("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
+                excelParams.AddParameter("Worksheet", "Agg Entries")
+                columns = New List(Of Column)
+                columns.AddColumns({"Customer ID", "Integer", "Entry", "Currency", "Test", "String"})
                 rightRS = New ReconSource With
                     {.ReconDataSource = excelDS,
                     .ReconTable = "aggentries",
                     .IsLoaded = False,
-                    .Parameters = excelParam,
+                    .Parameters = excelParams,
                     .Aggregations = aggregates,
-                    .Where = "ISNULL(x!.[Entry], 0) <> 0",
-                    .Fields = {"Customer ID", "Entry", "Test"},
-                    .Types = {"Integer", "Currency", "String"}
+                    .WhereClause = "ISNULL(x!.[Entry], 0) <> 0",
+                    .Columns = columns
                 }
 
-                completenessComparisions.Add(New Comparision With {.LeftColumn = "Customer ID", .RightColumn = "Customer ID", .ComparisionTest = ComparisionType.TextCaseEquals})
+                completenessComparisions.Add(New Comparision With {.LeftColumn = "Customer ID", .RightColumn = "Customer ID", .ComparisionTest = ComparisionType.NumberEquals})
                 matchingComparisions.Add(New Comparision With {.LeftColumn = "Balance", .RightColumn = "EntryTotal", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
                 matchingComparisions.Add(New Comparision With {.LeftColumn = "Count", .RightColumn = "EntryCount", .Percision = 0, .ComparisionTest = ComparisionType.NumberEquals})
                 matchingComparisions.Add(New Comparision With {.LeftColumn = "Avg", .RightColumn = "EntryAvg", .Percision = 9, .ComparisionTest = ComparisionType.NumberEquals})
@@ -671,7 +698,71 @@ Partial Class MainWindow
         End If
     End Sub
 
+    Private Sub CBSolution_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
+        Dim cb As ComboBox = TryCast(sender, ComboBox)
+        Dim cbi As ComboBoxItem = cb.SelectedValue
+        Dim solutionName As String = cbi.Content.ToString
+        Task.Factory.StartNew(Sub() Configure(solutionName)).
+                                  ContinueWith(Sub() LoadReconSources()).
+                                  ContinueWith(Sub() Test())
+    End Sub
 End Class
 
 
+Public Class AppViewModel
+    Implements INotifyPropertyChanged
+#Region "-- Notify Property Change --"
+    Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
 
+    Public Sub OnPropertyChanged(propertyName As String)
+        Me.CheckPropertyName(propertyName)
+        RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
+    End Sub
+
+    <Conditional("DEBUG")>
+    <DebuggerStepThrough>
+    Public Sub CheckPropertyName(propertyName As String)
+        If TypeDescriptor.GetProperties(Me)(propertyName) Is Nothing Then
+            Throw New Exception($"Could not find property: {propertyName}")
+        End If
+    End Sub
+#End Region
+#Region "-- Setting Model Properties --"
+    Public Property DataSources As List(Of DataSource)
+        Get
+            DataSources = DataSource.DataSources
+        End Get
+        Set(value As List(Of DataSource))
+            DataSource.DataSources = value
+            'OnPropertyChanged("DataSources")
+        End Set
+    End Property
+
+    Public Property SelectedDataSource As DataSource
+    Public Property MainWindow As MainWindow
+
+    'Private _dataSources As List(Of DataSource)
+    Public Property Translations As List(Of Translation)
+        Get
+            Translations = _translations
+        End Get
+        Set(value As List(Of Translation))
+            _translations = value
+            'OnPropertyChanged("Translations")
+        End Set
+    End Property
+    Private _translations As List(Of Translation)
+
+    Public Property CompareMethods As List(Of CompareMethod)
+        Get
+            CompareMethods = _compareMethods
+        End Get
+        Set(value As List(Of CompareMethod))
+            _compareMethods = value
+        End Set
+    End Property
+    Private _compareMethods As List(Of CompareMethod)
+
+
+#End Region
+End Class

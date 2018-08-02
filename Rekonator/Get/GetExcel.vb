@@ -9,8 +9,8 @@ Public Class GetExcel
 
     Public Function Load(reconSource As ReconSource) As Boolean
         Dim reconTable As String = reconSource.ReconTable
-        Dim filePath As String = reconSource.Parameters("FilePath")
-        Dim worksheetName As String = reconSource.Parameters("Worksheet")
+        Dim filePath As String = reconSource.Parameters.GetParameter("FilePath")
+        Dim worksheetName As String = reconSource.Parameters.GetParameter("Worksheet")
         Application.Message($"Loading Table {reconTable} from Excel Worksheet {worksheetName}")
         Try
             Using fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite) 'FileShare is ReadWrite even though FileAccess is Read Only.  This allows file to be open if it open in another process e.g. Excel
@@ -27,14 +27,14 @@ Public Class GetExcel
                     If Not excelReader.Read() Then Return Nothing
                     Dim fieldCount As Integer = 0
                     Dim fieldList As New List(Of String)
-                    If reconSource.Fields Is Nothing Then
+                    If reconSource.Columns Is Nothing Then
                         fieldCount = excelReader.FieldCount
                         For idx = 0 To fieldCount - 1
                             If excelReader.GetValue(idx) Is Nothing Then Exit For
                             fieldList.Add(excelReader.GetValue(idx))
                         Next
                     Else
-                        fieldList = reconSource.Fields.ToList
+                        fieldList = reconSource.Columns.Select(Function(s) s.ColumnName).ToList
                     End If
                     fieldCount = fieldList.Count
 

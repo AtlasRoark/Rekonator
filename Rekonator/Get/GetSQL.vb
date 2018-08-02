@@ -4,21 +4,21 @@ Public Class GetSQL
     Implements IDisposable
 
     Public Function Load(reconSource As ReconSource, fromDate As DateTime, toDate As DateTime)
-        Using sourceConnection = New SqlConnection(reconSource.Parameters("connectionstring"))
+        Using sourceConnection = New SqlConnection(reconSource.Parameters.GetParameter("connectionstring"))
             Using rekonConnection As New SQL()
                 Dim commandText As String = String.Empty
 
                 sourceConnection.Open()
                 rekonConnection.DropTable(reconSource.ReconTable)
 
-                commandText = reconSource.Parameters("create")
+                commandText = reconSource.Parameters.GetParameter("create")
                 commandText = commandText.Insert(commandText.Length - 1, ", rekonid int IDENTITY(1,1)")
                 rekonConnection.ExecuteNonQuery(commandText)
 
-                If reconSource.Parameters.ContainsKey("commandtext") Then
-                    commandText = reconSource.Parameters("commandtext")
+                If reconSource.Parameters.IsExist("commandtext") Then
+                    commandText = reconSource.Parameters.GetParameter("commandtext")
                 Else
-                    commandText = rekonConnection.GetFromCommandPath(reconSource.Parameters("commandpath"))
+                    commandText = rekonConnection.GetFromCommandPath(reconSource.Parameters.GetParameter("commandpath"))
                 End If
                 Using selectCommand As New SqlCommand(commandText, sourceConnection)
 
@@ -28,9 +28,10 @@ Public Class GetSQL
                     If Not toDate.Equals(DateTime.MinValue) Then
                         selectCommand.Parameters.Add(New SqlParameter With {.ParameterName = "@To", .SqlDbType = Data.SqlDbType.DateTime, .Value = toDate})
                     End If
-
+                    Application.Message($"Loading SQL Datasource {selectCommand.CommandText}")
                     Using selectReader As SqlDataReader = selectCommand.ExecuteReader()
                         Using destBulkInsert = New SqlBulkCopy(rekonConnection.Connection)
+                            destBulkInsert.BulkCopyTimeout = 300
                             destBulkInsert.DestinationTableName = reconSource.ReconTable
                             destBulkInsert.WriteToServer(selectReader)
                         End Using

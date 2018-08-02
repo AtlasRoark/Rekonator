@@ -42,7 +42,7 @@ Public Class Reconciliation
     Public Shared Function GetMatchSelect(recon As Reconciliation) As String
         Dim isFirst As Boolean = True
         _sb.Clear()
-        _sb.AppendLine(MakeDropTable("Match"))
+        '_sb.AppendLine(MakeDropTable("Match"))
 
         Dim cteTable As String = String.Empty
         Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing)
@@ -81,11 +81,11 @@ Public Class Reconciliation
         _sb.Append("AND ")
         _sb.AppendLine(MakeWhereComparision(recon.MatchingComparisions))
 
-        If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.Where) And Not isAggA Then
-            _sb.AppendLine($"AND {recon.LeftReconSource.Where.Replace("x!", "a")}")
+        If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) And Not isAggA Then
+            _sb.AppendLine($"AND {recon.LeftReconSource.WhereClause.Replace("x!", "a")}")
         End If
-        If Not String.IsNullOrWhiteSpace(recon.RightReconSource.Where) And Not isAggB Then
-            _sb.AppendLine($"AND {recon.RightReconSource.Where.Replace("x!", "b")}")
+        If Not String.IsNullOrWhiteSpace(recon.RightReconSource.WhereClause) And Not isAggB Then
+            _sb.AppendLine($"AND {recon.RightReconSource.WhereClause.Replace("x!", "b")}")
         End If
 
         _sb.AppendLine()
@@ -93,20 +93,19 @@ Public Class Reconciliation
         Return _sb.ToString
     End Function
 
-    Private Shared Function MakeDropTable(tableName As String) As String
-        Dim mdt As New StringBuilder
-        mdt.AppendLine("BEGIN TRANSACTION;")
-        mdt.AppendLine($"IF (OBJECT_ID('Rekonator.[dbo].[{tableName}]') IS NOT NULL) DROP TABLE [{tableName}];")
-        mdt.AppendLine("COMMIT TRANSACTION;")
-        mdt.AppendLine()
-        Return mdt.ToString
-    End Function
+    'Private Shared Function MakeDropTable(tableName As String) As String
+    '    Dim mdt As New StringBuilder
+    '    mdt.AppendLine("USE;")
+    '    mdt.AppendLine($"IF (OBJECT_ID('Rekonator.[dbo].[{tableName}]') IS NOT NULL) DROP TABLE Rekonator.[dbo].[{tableName}];")
+    '    mdt.AppendLine("COMMIT TRANSACTION;")
+    '    mdt.AppendLine()
+    '    Return mdt.ToString
+    'End Function
 
     Public Shared Function GetDifferSelect(recon As Reconciliation) As String
         Dim isFirst As Boolean = True
         _sb.Clear()
-        _sb.AppendLine("IF(OBJECT_ID('Rekonator.[dbo].[Differ]') IS NOT NULL) DROP TABLE [Differ];")
-        _sb.AppendLine()
+        '_sb.AppendLine(MakeDropTable("Differ"))
 
         Dim cteTable As String = String.Empty
         Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing)
@@ -167,11 +166,11 @@ Public Class Reconciliation
         _sb.AppendLine(MakeWhereComparision(recon.CompletenessComparisions))
 
 
-        If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.Where) And Not isAggA Then
-            _sb.AppendLine($"AND {recon.LeftReconSource.Where.Replace("x!", "a")}")
+        If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) And Not isAggA Then
+            _sb.AppendLine($"AND {recon.LeftReconSource.WhereClause.Replace("x!", "a")}")
         End If
-        If Not String.IsNullOrWhiteSpace(recon.RightReconSource.Where) And Not isAggB Then
-            _sb.AppendLine($"AND {recon.RightReconSource.Where.Replace("x!", "b")}")
+        If Not String.IsNullOrWhiteSpace(recon.RightReconSource.WhereClause) And Not isAggB Then
+            _sb.AppendLine($"AND {recon.RightReconSource.WhereClause.Replace("x!", "b")}")
         End If
         If isAggA Then
             _sb.AppendLine("AND")
@@ -235,8 +234,8 @@ Public Class Reconciliation
                 sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}({aorb}.[{aop.SourceColumn}])")
             Next
             sb.AppendLine($"FROM [dbo].[{reconSource.ReconTable}] {aorb}")
-            If Not String.IsNullOrWhiteSpace(reconSource.Where) Then
-                sb.AppendLine($"WHERE {reconSource.Where.Replace("x!", aorb)}")
+            If Not String.IsNullOrWhiteSpace(reconSource.WhereClause) Then
+                sb.AppendLine($"WHERE {reconSource.WhereClause.Replace("x!", aorb)}")
             End If
             sb.AppendLine("GROUP BY ")
             sb.AppendLine(MakeGroupByColumns(agg.GroupByColumns, aorb))
@@ -264,8 +263,7 @@ Public Class Reconciliation
         Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing)
 
         _sb.Clear()
-        _sb.AppendLine("IF(OBJECT_ID('Rekonator.[dbo].[Left]') IS NOT NULL) DROP TABLE [Left];")
-        _sb.AppendLine()
+        '_sb.AppendLine(MakeDropTable("Left"))
 
         If isAggA Then
             _sb.AppendLine("SELECT")
@@ -276,8 +274,8 @@ Public Class Reconciliation
             _sb.AppendLine("INTO [Left]")
             _sb.AppendLine($"FROM [dbo].[{recon.LeftReconSource.ReconTable}] a")
             _sb.AppendLine("WHERE")
-            If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.Where) Then
-                _sb.AppendLine($"{recon.LeftReconSource.Where.Replace("x!.", "a.")}")
+            If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) Then
+                _sb.AppendLine($"{recon.LeftReconSource.WhereClause.Replace("x!.", "a.")}")
                 _sb.AppendLine("AND")
             End If
             _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Match", "a"))
@@ -297,8 +295,8 @@ Public Class Reconciliation
             _sb.AppendLine("NOT EXISTS (SELECT * FROM [Differ] d WHERE d.IdA = a.rekonid)")
             _sb.AppendLine()
             _sb.AppendLine("SELECT * FROM [Left] a")
-            If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.Where) Then
-                _sb.AppendLine($"WHERE {recon.LeftReconSource.Where.Replace("x!.", "a.")}")
+            If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) Then
+                _sb.AppendLine($"WHERE {recon.LeftReconSource.WhereClause.Replace("x!.", "a.")}")
             End If
         End If
         Return _sb.ToString
@@ -306,8 +304,7 @@ Public Class Reconciliation
     Public Shared Function GetRightSelect(recon As Reconciliation) As String
         Dim isAggB As Boolean = (recon.RightReconSource.Aggregations IsNot Nothing)
         _sb.Clear()
-        _sb.AppendLine("IF(OBJECT_ID('Rekonator.[dbo].[Right]') IS NOT NULL) DROP TABLE [Right];")
-        _sb.AppendLine()
+        '_sb.AppendLine(MakeDropTable("Right"))
 
         If isAggB Then
             _sb.AppendLine("SELECT")
@@ -318,8 +315,8 @@ Public Class Reconciliation
             _sb.AppendLine("INTO [Right]")
             _sb.AppendLine($"FROM [dbo].[{recon.RightReconSource.ReconTable}] b")
             _sb.AppendLine("WHERE")
-            If Not String.IsNullOrWhiteSpace(recon.RightReconSource.Where) Then
-                _sb.AppendLine($"{recon.RightReconSource.Where.Replace("x!.", "b.")}")
+            If Not String.IsNullOrWhiteSpace(recon.RightReconSource.WhereClause) Then
+                _sb.AppendLine($"{recon.RightReconSource.WhereClause.Replace("x!.", "b.")}")
                 _sb.AppendLine("AND")
             End If
             _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Match", "b"))
@@ -339,8 +336,8 @@ Public Class Reconciliation
             _sb.AppendLine("NOT EXISTS (SELECT * FROM [Differ] d WHERE d.IdB = b.rekonid)")
             _sb.AppendLine()
             _sb.AppendLine("SELECT * FROM [Right] b")
-            If Not String.IsNullOrWhiteSpace(recon.RightReconSource.Where) Then
-                _sb.AppendLine($"WHERE {recon.RightReconSource.Where.Replace("x!.", "b.")}")
+            If Not String.IsNullOrWhiteSpace(recon.RightReconSource.WhereClause) Then
+                _sb.AppendLine($"WHERE {recon.RightReconSource.WhereClause.Replace("x!.", "b.")}")
             End If
 
         End If

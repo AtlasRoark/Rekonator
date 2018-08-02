@@ -1,20 +1,53 @@
 ﻿<UserControl x:Class="DataSourcePage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:Rekonator"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             mc:Ignorable="d"
+             d:DesignHeight="450"
+             d:DesignWidth="800">
+    
+    <UserControl.Resources>
+        <local:ReconSource x:Key="reconSouce" />
+    </UserControl.Resources>
 
-
-    <Grid >
+    <Grid  >
         <StackPanel>
-            <ComboBox ItemsSource="{Binding DataSources}" 
-                      DisplayMemberPath="DataSourceName" />
+            <!--List of DataSources bound to AppViewModel Binding SelectedDataSource, Mode=OneWay-->
+            <ComboBox x:Name="CBDataSources" ItemsSource="{Binding DataSources}"
+                      DisplayMemberPath="DataSourceName"
+                      SelectedItem="{Binding ReconDataSource.DataSourceName, Mode=OneWay}"  SelectionChanged="CBDataSources_SelectionChanged" />
+            <!--DataSource in selected value is in the ReconSource object IsSynchronizedWithCurrentItem="True"-->
             <ComboBox ItemsSource="{Binding Translations}"
                       DisplayMemberPath="TranslationName" />
-            <!--<DataGrid ItemsSource="{Binding Fields}">
+            <TextBlock Text="Selected ReconDataSource.Name" />
+            <TextBox Text="{Binding ReconDataSource.DataSourceName}" />
+            <TextBlock Text="Is Loaded" />
+            <CheckBox IsChecked="{Binding IsLoaded}" />
+            <TextBlock Text="Recon Table" />
+            <TextBox Text="{Binding  ReconTable}" />
+            <DataGrid ItemsSource="{Binding Parameters}" />
+                                  <TextBlock Text="Where" />
+                <TextBox Text="{Binding Where}" />
+            <DataGrid ItemsSource="{Binding Columns}" />
+            <DataGrid ItemsSource="{Binding Aggregations}" />
+            <!--<TextBlock Text="Parameters" />-->
+                
+                <!-- 
+            DataContext="{StaticResource reconSouce}"
+            Property ReconDataSource As DataSource
+    Property ReconTable As String
+    Property IsLoaded As Boolean
+    Property Parameters As Dictionary(Of String, String)
+    Property LoadedSet As DataTable
+    Property Where As String
+    Property Fields As String()
+    Property Types As String()
+    Property Aggregations As List(Of Aggregate)
+            
+            
+            <DataGrid ItemsSource="{Binding Fields}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Field Name"
                                                 Binding="{Binding FieldName}" />

@@ -37,20 +37,22 @@ Public Class GetQBD
             QReport.IncludeColumnList.Add(ENIncludeColumn.icAccount)
             QReport.IncludeColumnList.Add(ENIncludeColumn.icDate)
             QReport.IncludeColumnList.Add(ENIncludeColumn.icRefNumber)
-            QReport.IncludeColumnList.Add(ENIncludeColumn.icClass)
+            'QReport.IncludeColumnList.Add(ENIncludeColumn.icClass)
             QReport.IncludeColumnList.Add(ENIncludeColumn.icTxnNumber)
             QReport.IncludeColumnList.Add(ENIncludeColumn.icAmount)
             QReport.IncludeColumnList.Add(ENIncludeColumn.icTxnType)
             QReport.IncludeColumnList.Add(ENIncludeColumn.icTxnID)
-            QReport.ReportTxnTypeFilter.TxnTypeFilterList.Add(ENTxnTypeFilter.ttfCreditMemo)
-            QReport.ReportTxnTypeFilter.TxnTypeFilterList.Add(ENTxnTypeFilter.ttfInvoice)
+            QReport.ReportAccountFilter.ORReportAccountFilter.FullNameList.Add("ACCOUNTS RECEIVABLE")
+            QReport.ReportTxnTypeFilter.TxnTypeFilterList.Add(ENTxnTypeFilter.ttfReceivePayment)
+            'QReport.ReportTxnTypeFilter.TxnTypeFilterList.Add(ENTxnTypeFilter.ttfCreditMemo)
+            'QReport.ReportTxnTypeFilter.TxnTypeFilterList.Add(ENTxnTypeFilter.ttfInvoice)
             QReport.ReportTxnTypeFilter.TxnTypeFilterList.Add(ENTxnTypeFilter.ttfJournalEntry)
-            QReport.ReportTxnTypeFilter.TxnTypeFilterList.Add(ENTxnTypeFilter.ttfCheck)
+            'QReport.ReportTxnTypeFilter.TxnTypeFilterList.Add(ENTxnTypeFilter.ttfCheck)
             _msgSetResponse = _sessionManager.DoRequests(_msgSetRequest)
             CloseQB()
 
-            Dim headerList As List(Of String) = {"Account", "Date", "Number", "Class", "Trans #", "Amount", "Type", "TxnID"}.ToList
-            Dim typeList As List(Of String) = {"String", "Date", "String", "String", "Integer", "Currency", "String", "String"}.ToList
+            Dim headerList As List(Of String) = {"Account", "Date", "Number", "Trans #", "Amount", "Type", "TxnID"}.ToList
+            Dim typeList As List(Of String) = {"String", "Date", "String", "Integer", "Currency", "String", "String"}.ToList
 
             _fieldCount = headerList.Count
             _sql = New SQL(reconSource.ReconTable, _fieldCount, headerList, typeList)

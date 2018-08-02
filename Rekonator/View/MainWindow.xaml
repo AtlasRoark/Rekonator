@@ -14,9 +14,12 @@
                       TextOptions.TextRenderingMode="Auto"
                       Background="{DynamicResource AccentColorBrush4}"
                       FontFamily="{DynamicResource MaterialDesignFont}"
+                      LeftWindowCommandsOverlayBehavior="Never"
+                      RightWindowCommandsOverlayBehavior="Never"
+                      WindowButtonCommandsOverlayBehavior="Never"
                       mc:Ignorable="d"
                       WindowState="Maximized"
-                      WindowStyle="ThreeDBorderWindow">
+                      WindowStyle="ThreeDBorderWindow" >
     <!--Background="{StaticResource MaterialDesignPaper}"-->
 
     <Window.Resources>
@@ -85,6 +88,10 @@
             <TextBlock Name="tbTitle"
                        Text="Rekonator"
                        Style="{DynamicResource MaterialDesignTitleTextBlock}" />
+            <ComboBox Name="CBSolution" SelectionChanged="CBSolution_SelectionChanged" Foreground="Black" FontSize="13" Margin="20,0,0,0">
+                <ComboBoxItem Content="QB P/L Detail" />
+                <ComboBoxItem Content="Test Agg" />
+            </ComboBox>
         </controls:WindowCommands>
     </controls:MetroWindow.LeftWindowCommands>
 
@@ -93,16 +100,14 @@
             <controls:Flyout x:Name="LeftFlyout"
                              Header="Left Data"
                              Position="Left"
-                             IsAutoCloseEnabled="True"
                              Width="400">
-                <local:DataSourcePage />
+                <local:DataSourcePage x:Name="dspLeft" />
             </controls:Flyout>
             <controls:Flyout x:Name="RightFlyout"
                              Header="Right Data"
                              Position="Right"
-                             IsAutoCloseEnabled="True"
                              Width="400">
-                <local:DataSourcePage />
+                <local:DataSourcePage x:Name="dspRight" />
             </controls:Flyout>
             <controls:Flyout x:Name="BottomFlyout"
                              Header="Messages"

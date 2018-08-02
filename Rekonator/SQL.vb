@@ -96,10 +96,23 @@ Public Class SQL
         Return False
     End Function
     Public Function DropTable(Optional tableName As String = "") As Boolean
-        If String.IsNullOrEmpty(tableName) Then tableName = _reconTable
-        ExecuteNonQuery($"IF(OBJECT_ID('Rekonator..[{tableName}]') IS NOT NULL) DROP TABLE [{tableName}];")
+        Try
+
+            If String.IsNullOrEmpty(tableName) Then tableName = _reconTable
+            ExecuteNonQuery($"IF(OBJECT_ID('Rekonator.dbo.[{tableName}]') IS NOT NULL) DROP TABLE Rekonator.dbo.[{tableName}];")
+            Return True
+        Catch ex As Exception
+            Application.ErrorMessage($"Error Dropping Table {_reconTable}: {ex.Message}")
+            Return False
+        End Try
     End Function
 
+    Public Function DropTables(tables As String()) As Boolean
+        For Each table In tables
+            If Not DropTable(table) Then Return False
+        Next
+        Return False
+    End Function
     Public Function InsertRow(rowList As List(Of Object)) As Boolean
         Try
             _rowNumber += 1
