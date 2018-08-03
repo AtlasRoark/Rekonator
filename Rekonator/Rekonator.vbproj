@@ -75,6 +75,7 @@
     <Compile Include="Models\MessageEntry.vb" />
     <Compile Include="Models\Parameter.vb" />
     <Compile Include="SQL.vb" />
+    <Compile Include="View\AggToTextConverter.vb" />
     <Compile Include="View\Client.xaml.vb">
       <DependentUpon>Client.xaml</DependentUpon>
     </Compile>

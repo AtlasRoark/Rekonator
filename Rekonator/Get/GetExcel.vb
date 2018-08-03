@@ -27,6 +27,8 @@ Public Class GetExcel
                     If Not excelReader.Read() Then Return Nothing
                     Dim fieldCount As Integer = 0
                     Dim fieldList As New List(Of String)
+                    Dim typeList As New List(Of String)
+
                     If reconSource.Columns Is Nothing Then
                         fieldCount = excelReader.FieldCount
                         For idx = 0 To fieldCount - 1
@@ -35,21 +37,20 @@ Public Class GetExcel
                         Next
                     Else
                         fieldList = reconSource.Columns.Select(Function(s) s.ColumnName).ToList
+                        typeList = reconSource.Columns.Select(Function(s) s.ColumnType).ToList
                     End If
                     fieldCount = fieldList.Count
 
                     'Get Field Types and First Row
                     If Not excelReader.Read() Then Return Nothing
-                    Dim typeList As New List(Of String)
                     Dim rowList As New List(Of Object)
                     For idx = 0 To fieldCount - 1
-                        If reconSource.Types Is Nothing Then
+                        If typeList.Count = 0 Then
                             typeList.Add(excelReader.GetFieldType(idx).Name)
                             If typeList(idx) Is Nothing Then typeList(idx) = "String"
                         End If
                         rowList.Add(excelReader.GetValue(idx))
                     Next
-                    If reconSource.Types IsNot Nothing Then typeList = reconSource.Types.ToList
 
                     Using sql As New SQL(reconTable, fieldCount, fieldList, typeList)
                         If Not sql.CreateTable() Then

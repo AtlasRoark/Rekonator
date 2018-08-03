@@ -4,8 +4,8 @@ Imports System.Data
 Imports Rekonator
 
 Partial Class MainWindow
-    Implements INotifyPropertyChanged
 
+    Private _vm As MainViewModel
     Private _solutionPath As String = String.Empty
     'Cant do notify prop change on datatables.  
     Private _right As New DataTable
@@ -15,82 +15,32 @@ Partial Class MainWindow
     Private _match As New DataTable
     Private _isControlPressed As Boolean = False
 
-#Region "-- Notify Property Change --"
-    Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
 
-    Public Sub OnPropertyChanged(propertyName As String)
-        Me.CheckPropertyName(propertyName)
-        RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
-    End Sub
-
-    <Conditional("DEBUG")>
-    <DebuggerStepThrough>
-    Public Sub CheckPropertyName(propertyName As String)
-        If TypeDescriptor.GetProperties(Me)(propertyName) Is Nothing Then
-            Throw New Exception($"Could not find property: {propertyName}")
-        End If
-    End Sub
-#End Region
-
-#Region "-- App Setting Properties --"
-    Public Property AppViewModel As AppViewModel
-        Get
-            AppViewModel = _appViewModel
-        End Get
-        Set(value As AppViewModel)
-            _appViewModel = value
-        End Set
-    End Property
-    Private _appViewModel As AppViewModel
-#End Region
 
 #Region "-- Solution Properties --"
 
-    Public Property ObsSolution As ObservableCollection(Of Reconciliation) 'active solution
-        Get
-            ObsSolution = _obsSolution
-        End Get
-        Set(value As ObservableCollection(Of Reconciliation))
-            _obsSolution = value
-            Reconciliation = _solution.Reconciliations(0)
-            Me.DataContext = Reconciliation
-            Me.dspLeft.DataContext = _solution.Reconciliations(0).LeftReconSource
-            Me.dspRight.DataContext = _solution.Reconciliations(0).RightReconSource
-            OnPropertyChanged("ObsSolution")
-        End Set
-    End Property
-    Private _obsSolution As ObservableCollection(Of Reconciliation)
-    Public Property Solution As Solution 'active solution
-        Get
-            Solution = _solution
-        End Get
-        Set(value As Solution)
-            _solution = value
-            Reconciliation = _solution.Reconciliations(0)
-            Me.DataContext = Me
-            Me.dspLeft.DataContext = _solution.Reconciliations(0).LeftReconSource
-            Me.dspRight.DataContext = _solution.Reconciliations(0).RightReconSource
-            OnPropertyChanged("Reconciliation")
-        End Set
-    End Property
-    Private _solution As Solution
+    'Public Property ObsSolution As ObservableCollection(Of Solution) 'active solution
+    '    Get
+    '        ObsSolution = _obsSolution
+    '    End Get
+    '    Set(value As ObservableCollection(Of Solution))
+    '        _obsSolution = value
+    '        Reconciliation = _solution.Reconciliations(0)
+    '        Me.DataContext = Me
+    '        Me.dspLeft.DataContext = _solution.Reconciliations(0).LeftReconSource
+    '        Me.dspRight.DataContext = _solution.Reconciliations(0).RightReconSource
+    '        OnPropertyChanged("ObsSolution")
+    '    End Set
+    'End Property
+    'Private _obsSolution As ObservableCollection(Of Solution)
 
-    Public Property Reconciliation As Reconciliation  ' active reconciliation from _solution
-        Get
-            Reconciliation = _reconciliation
-        End Get
-        Set(value As Reconciliation)
-            _reconciliation = value
-        End Set
-    End Property
-    Private _reconciliation As Reconciliation
 
     Public Property LeftSet As DataView
         Get
             LeftSet = _left.AsDataView
         End Get
         Set(value As DataView)
-            OnPropertyChanged("LeftSet")
+            'OnPropertyChanged("LeftSet")
         End Set
     End Property
     Private _left As New DataTable
@@ -100,7 +50,7 @@ Partial Class MainWindow
             RightSet = _right.AsDataView
         End Get
         Set(value As DataView)
-            OnPropertyChanged("RightSet")
+            'OnPropertyChanged("RightSet")
         End Set
     End Property
 
@@ -109,7 +59,7 @@ Partial Class MainWindow
             DifferSet = _differ.AsDataView
         End Get
         Set(value As DataView)
-            OnPropertyChanged("DifferSet")
+            'OnPropertyChanged("DifferSet")
         End Set
     End Property
 
@@ -118,7 +68,7 @@ Partial Class MainWindow
             MatchSet = _match.AsDataView
         End Get
         Set(value As DataView)
-            OnPropertyChanged("MatchSet")
+            'OnPropertyChanged("MatchSet")
         End Set
     End Property
 
@@ -130,7 +80,7 @@ Partial Class MainWindow
             MessageLog = _messages
         End Get
         Set(value As List(Of MessageEntry))
-            OnPropertyChanged("MessageLog")
+            'OnPropertyChanged("MessageLog")
         End Set
     End Property
     Private _messages As New List(Of MessageEntry)
@@ -141,7 +91,7 @@ Partial Class MainWindow
             _solutionPath = sd.OpenFile()
         End Using
         If Not String.IsNullOrEmpty(_solutionPath) Then
-            _solution = Solution.LoadSolution(_solutionPath)
+            '_solution = Solution.LoadSolution(_solutionPath)
 
         End If
     End Sub
@@ -178,9 +128,9 @@ Partial Class MainWindow
             If dr IsNot Nothing Then
                 Using sql As New SQL
 
-                    _left = sql.GetDataTable($"Select * From [dbo].[{_reconciliation.LeftReconSource.ReconTable}] Where [Txn ID] = '{dr.ItemArray(3)}' AND [GL ACCOUNT] = '{dr.ItemArray(4)}'")
+                    _left = sql.GetDataTable($"Select * From [dbo].[{_vm.Reconciliation.LeftReconSource.ReconTable}] Where [Txn ID] = '{dr.ItemArray(3)}' AND [GL ACCOUNT] = '{dr.ItemArray(4)}'")
                     LeftSet = _left.AsDataView
-                    _right = sql.GetDataTable($"Select * From [dbo].[{_reconciliation.RightReconSource.ReconTable}] Where [TxnID] = '{dr.ItemArray(5)}' AND [Account] = '{dr.ItemArray(6)}'")
+                    _right = sql.GetDataTable($"Select * From [dbo].[{_vm.Reconciliation.RightReconSource.ReconTable}] Where [TxnID] = '{dr.ItemArray(5)}' AND [Account] = '{dr.ItemArray(6)}'")
                     RightSet = _right.AsDataView
                 End Using
 
@@ -200,13 +150,18 @@ Partial Class MainWindow
 
         ' This call is required by the designer.
         InitializeComponent()
-        'DataContext = Me
+        _vm = New MainViewModel
+        DataContext = _vm
         Application.MessageFunc = AddressOf AddMessage
+
         Using m As New Mock
-            AppViewModel = m.MockLoadSettings(Me) 'Model for App Settings
-            dspLeft.CBDataSources.DataContext = AppViewModel
-            dspRight.CBDataSources.DataContext = AppViewModel
-            Solution = Task.Run(Function() m.MockLoadSolutionAsync(1)).GetAwaiter().GetResult() 'Model for Solution
+            m.MockLoadSettings(_vm) 'Model for App Settings
+            dspLeft.CBDataSources.DataContext = _vm.DataSources
+            dspRight.CBDataSources.DataContext = _vm.DataSources
+            _vm.Solution = Task.Run(Function() m.MockLoadSolutionAsync(1)).GetAwaiter().GetResult() 'Model for Solution
+            'Me.dspLeft.DataContext = _solution.Reconciliations(0).LeftReconSource
+            'Me.dspRight.DataContext = _solution.Reconciliations(0).RightReconSource
+
         End Using
 
     End Sub
@@ -226,15 +181,15 @@ Partial Class MainWindow
         End Using
         Using sql As New SQL
 
-            _match = sql.GetDataTable(Reconciliation.GetMatchSelect(_reconciliation))
+            _match = sql.GetDataTable(Reconciliation.GetMatchSelect(_vm.Reconciliation))
             MatchSet = _match.AsDataView
-            _differ = sql.GetDataTable(Reconciliation.GetDifferSelect(_reconciliation))
+            _differ = sql.GetDataTable(Reconciliation.GetDifferSelect(_vm.Reconciliation))
             If _differ.AsDataView Is Nothing Then Exit Sub
             DifferSet = _match.AsDataView
-            _left = sql.GetDataTable(Reconciliation.GetLeftSelect(_reconciliation))
+            _left = sql.GetDataTable(Reconciliation.GetLeftSelect(_vm.Reconciliation))
             If _left.AsDataView Is Nothing Then Exit Sub
             LeftSet = _left.AsDataView
-            _right = sql.GetDataTable(Reconciliation.GetRightSelect(_reconciliation))
+            _right = sql.GetDataTable(Reconciliation.GetRightSelect(_vm.Reconciliation))
             RightSet = _right.AsDataView
         End Using
 
@@ -634,20 +589,20 @@ Partial Class MainWindow
 
         End Select
 
-        _solution = New Solution With {.SolutionName = testName, .Reconciliations = Reconciliation.Reconciliations}
-        _reconciliation = _solution.Reconciliations(0)
+        '_solution = New Solution With {.SolutionName = testName, .Reconciliations = Reconciliation.Reconciliations}
+        '_reconciliation = _solution.Reconciliations(0)
 
     End Sub
 
     Private Sub LoadReconSources()
-        If Not _reconciliation.LeftReconSource.IsLoaded Then LoadReconSource(_reconciliation.LeftReconSource)
-        If Not _reconciliation.RightReconSource.IsLoaded Then LoadReconSource(_reconciliation.RightReconSource)
+        If Not _vm.Reconciliation.LeftReconSource.IsLoaded Then LoadReconSource(_vm.Reconciliation.LeftReconSource)
+        If Not _vm.Reconciliation.RightReconSource.IsLoaded Then LoadReconSource(_vm.Reconciliation.RightReconSource)
 
         Using sql As New SQL
-            Dim rs As ReconSource = _reconciliation.LeftReconSource
+            Dim rs As ReconSource = _vm.Reconciliation.LeftReconSource
             _left = sql.GetDataTable(ReconSource.GetSelect(rs)) ', _reconciliation.FromDate, _reconciliation.ToDate)
             LeftSet = _left.AsDataView
-            rs = _reconciliation.RightReconSource
+            rs = _vm.Reconciliation.RightReconSource
             _right = sql.GetDataTable(ReconSource.GetSelect(rs)) ', _reconciliation.FromDate, _reconciliation.ToDate)
             RightSet = _right.AsDataView
         End Using
@@ -661,11 +616,11 @@ Partial Class MainWindow
                 End Using
             Case "SQL"
                 Using sql As New GetSQL
-                    reconSource.IsLoaded = sql.Load(reconSource, _reconciliation.FromDate, _reconciliation.ToDate)
+                    reconSource.IsLoaded = sql.Load(reconSource, _vm.Reconciliation.FromDate, _vm.Reconciliation.ToDate)
                 End Using
             Case "QuickBooks"
                 Using qbd As New GetQBD
-                    reconSource.IsLoaded = qbd.LoadReport(reconSource, _reconciliation.FromDate, _reconciliation.ToDate)
+                    reconSource.IsLoaded = qbd.LoadReport(reconSource, _vm.Reconciliation.FromDate, _vm.Reconciliation.ToDate)
                 End Using
         End Select
     End Sub
@@ -674,7 +629,7 @@ Partial Class MainWindow
         Try
             If Not BottomFlyout.IsOpen Then BottomFlyout.IsOpen = True
             MessageLog.Add(New MessageEntry With {.MessageText = messageText, .IsError = isError})
-            OnPropertyChanged("MessageLog")
+            'OnPropertyChanged("MessageLog")
             lbMessageLog.SelectedIndex = lbMessageLog.Items.Count - 1
             lbMessageLog.ScrollIntoView(lbMessageLog.SelectedItem)
 
@@ -700,33 +655,27 @@ Partial Class MainWindow
 
     Private Sub CBSolution_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
         Dim cb As ComboBox = TryCast(sender, ComboBox)
-        Dim cbi As ComboBoxItem = cb.SelectedValue
-        Dim solutionName As String = cbi.Content.ToString
-        Task.Factory.StartNew(Sub() Configure(solutionName)).
-                                  ContinueWith(Sub() LoadReconSources()).
-                                  ContinueWith(Sub() Test())
+        If cb IsNot Nothing Then
+            Dim rc As Reconciliation = TryCast(cb.SelectedValue, Reconciliation)
+            If rc IsNot Nothing Then
+                _vm.Reconciliation = rc
+                'Task.Factory.StartNew(Sub() Configure(solutionName)).
+                '                  ContinueWith(Sub() LoadReconSources()).
+                '                  ContinueWith(Sub() Test())
+            End If
+        End If
+    End Sub
+
+    Private Sub MainWindow_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
+        dspLeft.DataContext = _vm.LeftReconSource
+        'dspRight.DataContext = _vm.RightReconSource
     End Sub
 End Class
 
-
-Public Class AppViewModel
+Public Class MainViewModel
+    Inherits ObservableCollection(Of Solution)
     Implements INotifyPropertyChanged
-#Region "-- Notify Property Change --"
-    Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
 
-    Public Sub OnPropertyChanged(propertyName As String)
-        Me.CheckPropertyName(propertyName)
-        RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
-    End Sub
-
-    <Conditional("DEBUG")>
-    <DebuggerStepThrough>
-    Public Sub CheckPropertyName(propertyName As String)
-        If TypeDescriptor.GetProperties(Me)(propertyName) Is Nothing Then
-            Throw New Exception($"Could not find property: {propertyName}")
-        End If
-    End Sub
-#End Region
 #Region "-- Setting Model Properties --"
     Public Property DataSources As List(Of DataSource)
         Get
@@ -763,6 +712,63 @@ Public Class AppViewModel
     End Property
     Private _compareMethods As List(Of CompareMethod)
 
+#End Region
+#Region "-- Solution Model Properties --"
+    'Surface parent properties here so two way binding works
+    Public Property Solution As Solution 'active solution
+        Get
+            Solution = _solution
+        End Get
+        Set(value As Solution)
+            _solution = value
+            Reconciliation = _solution.Reconciliations(0)
+            OnPropertyChanged("Solution")
+        End Set
+    End Property
+    Private _solution As Solution
+
+    Public Property Reconciliation As Reconciliation  ' active reconciliation from _solution
+        Get
+            Reconciliation = _reconciliation
+        End Get
+        Set(value As Reconciliation)
+            _reconciliation = value
+            LeftReconSource = _reconciliation.LeftReconSource
+
+            OnPropertyChanged("Reconciliation")
+        End Set
+    End Property
+    Private _reconciliation As Reconciliation
+
+    Public Property LeftReconSource As ReconSource  ' active reconciliation from _solution
+        Get
+            LeftReconSource = _leftReconSource
+        End Get
+        Set(value As ReconSource)
+            _leftReconSource = value
+            OnPropertyChanged("LeftReconSource")
+        End Set
+    End Property
+    Private _leftReconSource As ReconSource
 
 #End Region
+
+#Region "-- Notify Property Change --"
+    Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
+
+    Public Sub OnPropertyChanged(propertyName As String)
+        Me.CheckPropertyName(propertyName)
+        RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
+    End Sub
+
+    <Conditional("DEBUG")>
+    <DebuggerStepThrough>
+    Public Sub CheckPropertyName(propertyName As String)
+        If TypeDescriptor.GetProperties(Me)(propertyName) Is Nothing Then
+            Throw New Exception($"Could not find property: {propertyName}")
+        End If
+    End Sub
+#End Region
+
+
 End Class

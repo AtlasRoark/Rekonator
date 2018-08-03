@@ -2,7 +2,6 @@
 Imports System.Runtime.Serialization.Formatters.Binary
 Imports System.Runtime.Serialization
 
-
 <Serializable()>
 Public Class Solution
     Implements ISerializable

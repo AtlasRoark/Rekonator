@@ -3,8 +3,7 @@
 Public Class Mock
     Implements IDisposable
 
-    Public Function MockLoadSettings(mainWindow As MainWindow) As AppViewModel
-        Dim appVM As New AppViewModel
+    Public Sub MockLoadSettings(vm As MainViewModel)
         'CompareMethod.Add("Integer Equals", AddressOf ValueComparer.CompareIntegerValues)
         'CompareMethod.Add("Single Equals", AddressOf ValueComparer.CompareSingleValues)
         'CompareMethod.Add("String Equals", AddressOf ValueComparer.CompareStringValues)
@@ -17,11 +16,8 @@ Public Class Mock
         ds.Add(New DataSource With {.DataSourceName = "QuickBooks"})
         ds.Add(New DataSource With {.DataSourceName = "ServiceTitan"})
         ds.Add(New DataSource With {.DataSourceName = "SQL"})
-        appVM.DataSources = ds
-
-        appVM.MainWindow = mainWindow
-        Return appVM
-    End Function
+        vm.DataSources = ds
+    End Sub
 
     Public Async Function MockLoadSolutionAsync(solutionNumber As Integer) As Task(Of Solution)
         'Public Function MockLoadSolution() As Solution
@@ -76,7 +72,8 @@ Public Class Mock
                     completenessComparisions.Add(New Comparision With {.LeftColumn = "TXN ID", .RightColumn = "TxnID", .ComparisionTest = ComparisionType.TextCaseEquals}) '.RightFunction = "SUBSTRING({RightColumn}, 11,  LEN({RightColumn}) -10)"
                     matchingComparisions = New List(Of Comparision)
                     matchingComparisions.Add(New Comparision With {.LeftColumn = "Total", .RightColumn = "Total", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
-                    Reconciliation.Add("Trans Detail", leftRS, rightRS, completenessComparisions, matchingComparisions, #1/1/2018#, #6/30/2018#)
+                    Reconciliation.Add("Jan Detail", leftRS, rightRS, completenessComparisions, matchingComparisions, #1/1/2018#, #1/31/2018#)
+                    Reconciliation.Add("Feb Detail", leftRS, rightRS, completenessComparisions, matchingComparisions, #2/1/2018#, #2/28/2018#)
                     Return New Solution With {.SolutionName = "ST/QB Trans", .Reconciliations = Reconciliation.Reconciliations}
                 Case 2
 

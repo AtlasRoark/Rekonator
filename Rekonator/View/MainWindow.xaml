@@ -19,7 +19,7 @@
                       WindowButtonCommandsOverlayBehavior="Never"
                       mc:Ignorable="d"
                       WindowState="Maximized"
-                      WindowStyle="ThreeDBorderWindow" >
+                      WindowStyle="ThreeDBorderWindow">
     <!--Background="{StaticResource MaterialDesignPaper}"-->
 
     <Window.Resources>
@@ -60,7 +60,8 @@
 
     <controls:MetroWindow.LeftWindowCommands>
         <controls:WindowCommands>
-
+            <TextBlock Text="Rekonator"
+                       Style="{DynamicResource MaterialDesignTitleTextBlock}" />
             <Button Name="btnOpenFile"
                     Click="btnOpenFile_Click"
                     ToolTip="Open File">
@@ -85,13 +86,8 @@
                     </Rectangle.OpacityMask>
                 </Rectangle>
             </Button>
-            <TextBlock Name="tbTitle"
-                       Text="Rekonator"
-                       Style="{DynamicResource MaterialDesignTitleTextBlock}" />
-            <ComboBox Name="CBSolution" SelectionChanged="CBSolution_SelectionChanged" Foreground="Black" FontSize="13" Margin="20,0,0,0">
-                <ComboBoxItem Content="QB P/L Detail" />
-                <ComboBoxItem Content="Test Agg" />
-            </ComboBox>
+            <TextBox Text="{Binding Solution.SolutionName}" />
+            <TextBox Text="{Binding Reconciliation.ReconciliationName}" />
         </controls:WindowCommands>
     </controls:MetroWindow.LeftWindowCommands>
 
@@ -109,10 +105,73 @@
                              Width="400">
                 <local:DataSourcePage x:Name="dspRight" />
             </controls:Flyout>
+            <controls:Flyout x:Name="TopFlyout"
+                             Header="Settings"
+                             Position="Top"
+                             Width="800"
+                             Height="400">
+                <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />                        
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Solution Name"
+                                       VerticalAlignment="Center" />
+                    <TextBox Grid.Row="0"
+                             Grid.Column="2" Text="{Binding Solution.SolutionName}" />
+                    
+                    <TextBlock Grid.Row="1" Grid.Column="0"
+                               Text="Reconciliation"
+                               VerticalAlignment="Center" />
+                    <ComboBox Grid.Row="1"
+                              Grid.Column="2"
+                              Name="CBSolution"
+                              SelectionChanged="CBSolution_SelectionChanged"
+                              Foreground="Black"
+                              FontSize="13"
+                              Margin="20,0,0,0"
+                              ItemsSource="{Binding Solution.Reconciliations}"
+                              SelectedItem="{Binding Reconciliation}"
+                              DisplayMemberPath="ReconciliationName" />
+
+                    <TextBlock Grid.Row="2"
+                               Grid.Column="0"
+                               Text="From Date"
+                               VerticalAlignment="Center" />
+                    <controls:DateTimePicker Grid.Row="2"
+                                             Grid.Column="2"
+                                             SelectedDate="{Binding Reconciliation.FromDate}" />
+                    <TextBlock Grid.Row="3"
+                               Grid.Column="0"
+                               Text="To Date"
+                               VerticalAlignment="Center" />
+                    <controls:DateTimePicker Grid.Row="3"
+                                             Grid.Column="2"
+                                             SelectedDate="{Binding Reconciliation.ToDate}" />
+
+                    <!--<StackPanel VerticalAlignment="Center"
+                                HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            
+                        </StackPanel>
+                    </StackPanel>-->
+
+                </Grid>
+            </controls:Flyout>
             <controls:Flyout x:Name="BottomFlyout"
                              Header="Messages"
                              Position="Bottom"
-                             IsAutoCloseEnabled="True"
                              Width="800"
                              Height="400">
                 <ListBox x:Name="lbMessageLog"
@@ -145,7 +204,7 @@
                         Name="btnLeft"
                         HorizontalAlignment="Center"
                         Click="btnLeft_Click" />
-                    <!--<TextBlock Text="Left" Style="{DynamicResource MaterialDesignTitleTextBlock}" />-->
+                <!--<TextBlock Text="Left" Style="{DynamicResource MaterialDesignTitleTextBlock}" />-->
                 <ToggleButton IsChecked="{Binding ElementName=LeftFlyout, Path=IsOpen}"
                               Cursor="Hand">
                 </ToggleButton>
@@ -204,9 +263,16 @@
 
         <StackPanel Grid.Row="0"
                     Grid.Column="1">
-            <TextBlock Text="Differ"
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center">
+                <TextBlock Text="Differ"
                        Style="{DynamicResource MaterialDesignTitleTextBlock}"
                        HorizontalAlignment="Center" />
+            <ToggleButton IsChecked="{Binding ElementName=TopFlyout, Path=IsOpen}"
+                          Cursor="Hand"
+                          Margin="5,0,0,0">
+            </ToggleButton>
+            </StackPanel>
         </StackPanel>
         <DataGrid x:Name="dgDiffer"
                   Grid.Row="1"
