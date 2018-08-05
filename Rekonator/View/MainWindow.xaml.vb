@@ -1,6 +1,7 @@
 ﻿Imports System.Collections.ObjectModel
 Imports System.ComponentModel
 Imports System.Data
+Imports MahApps.Metro.Controls.Dialogs
 Imports Rekonator
 
 Partial Class MainWindow
@@ -75,15 +76,7 @@ Partial Class MainWindow
 
 #End Region
 
-    Public Property MessageLog As List(Of MessageEntry)
-        Get
-            MessageLog = _messages
-        End Get
-        Set(value As List(Of MessageEntry))
-            'OnPropertyChanged("MessageLog")
-        End Set
-    End Property
-    Private _messages As New List(Of MessageEntry)
+
 
 #Region "-- Commands --"
     Private Sub btnOpenFile_Click(sender As Object, e As RoutedEventArgs)
@@ -97,24 +90,31 @@ Partial Class MainWindow
     End Sub
 
     Private Sub btnSaveFile_Click(sender As Object, e As RoutedEventArgs)
+
         Exit Sub
 
     End Sub
 
-    Private Sub btnLeft_Click(sender As Object, e As RoutedEventArgs)
-        MessageLog.Clear()
+    Public Sub btnLeft_Click(sender As Object, e As RoutedEventArgs)
+        Application.Current.Dispatcher.BeginInvoke(Async Function()
+                                                       Dim r As MessageDialogResult = Await ShowMessageAsync("This is the title", "Some message", MessageDialogStyle.AffirmativeAndNegative)
+                                                   End Function)
+        _vm.MessageLog.Clear()
         '_reconciliation.LeftReconSource.IsLoaded = False
         'btnMatch_Click(sender, e)
     End Sub
     Private Sub btnRight_Click(sender As Object, e As RoutedEventArgs)
-        MessageLog.Clear()
+        _vm.MessageLog.Clear()
         '_reconciliation.RightReconSource.IsLoaded = False
         'btnMatch_Click(sender, e)
     End Sub
+    Private Sub btnDiffer_Click(sender As Object, e As RoutedEventArgs)
+
+    End Sub
     Private Sub btnMatch_Click(sender As Object, e As RoutedEventArgs)
-        MessageLog.Clear() 'Test Agg QB P/L Detail
-        Task.Factory.StartNew(Sub() LoadReconSources()).
-                                  ContinueWith(Sub() Test())
+        _vm.MessageLog.Clear() 'Test Agg QB P/L Detail
+        'Task.Factory.StartNew(Sub() LoadReconSources()).
+        '                          ContinueWith(Sub() Test())
 
         'Task.Factory.StartNew(Sub() Configure("QB P/L Detail")).
         '                          ContinueWith(Sub() LoadReconSources()).
@@ -155,13 +155,8 @@ Partial Class MainWindow
         Application.MessageFunc = AddressOf AddMessage
 
         Using m As New Mock
-            m.MockLoadSettings(_vm) 'Model for App Settings
-            dspLeft.CBDataSources.DataContext = _vm.DataSources
-            dspRight.CBDataSources.DataContext = _vm.DataSources
+            _vm.DataSources = m.MockLoadDataSources()
             _vm.Solution = Task.Run(Function() m.MockLoadSolutionAsync(1)).GetAwaiter().GetResult() 'Model for Solution
-            'Me.dspLeft.DataContext = _solution.Reconciliations(0).LeftReconSource
-            'Me.dspRight.DataContext = _solution.Reconciliations(0).RightReconSource
-
         End Using
 
     End Sub
@@ -594,41 +589,11 @@ Partial Class MainWindow
 
     End Sub
 
-    Private Sub LoadReconSources()
-        If Not _vm.Reconciliation.LeftReconSource.IsLoaded Then LoadReconSource(_vm.Reconciliation.LeftReconSource)
-        If Not _vm.Reconciliation.RightReconSource.IsLoaded Then LoadReconSource(_vm.Reconciliation.RightReconSource)
-
-        Using sql As New SQL
-            Dim rs As ReconSource = _vm.Reconciliation.LeftReconSource
-            _left = sql.GetDataTable(ReconSource.GetSelect(rs)) ', _reconciliation.FromDate, _reconciliation.ToDate)
-            LeftSet = _left.AsDataView
-            rs = _vm.Reconciliation.RightReconSource
-            _right = sql.GetDataTable(ReconSource.GetSelect(rs)) ', _reconciliation.FromDate, _reconciliation.ToDate)
-            RightSet = _right.AsDataView
-        End Using
-    End Sub
-
-    Private Sub LoadReconSource(reconSource As ReconSource)
-        Select Case reconSource.ReconDataSource.DataSourceName
-            Case "Excel"
-                Using excel As New GetExcel
-                    reconSource.IsLoaded = excel.Load(reconSource)
-                End Using
-            Case "SQL"
-                Using sql As New GetSQL
-                    reconSource.IsLoaded = sql.Load(reconSource, _vm.Reconciliation.FromDate, _vm.Reconciliation.ToDate)
-                End Using
-            Case "QuickBooks"
-                Using qbd As New GetQBD
-                    reconSource.IsLoaded = qbd.LoadReport(reconSource, _vm.Reconciliation.FromDate, _vm.Reconciliation.ToDate)
-                End Using
-        End Select
-    End Sub
 
     Public Sub AddMessage(messageText As String, isError As Boolean)
         Try
             If Not BottomFlyout.IsOpen Then BottomFlyout.IsOpen = True
-            MessageLog.Add(New MessageEntry With {.MessageText = messageText, .IsError = isError})
+            _vm.MessageLog.Add(New MessageEntry With {.MessageText = messageText, .IsError = isError})
             'OnPropertyChanged("MessageLog")
             lbMessageLog.SelectedIndex = lbMessageLog.Items.Count - 1
             lbMessageLog.ScrollIntoView(lbMessageLog.SelectedItem)
@@ -667,108 +632,14 @@ Partial Class MainWindow
     End Sub
 
     Private Sub MainWindow_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
+        dspLeft.CBDataSources.DataContext = _vm 'Model for App Settings
+        dspRight.CBDataSources.DataContext = _vm 'Model for App Settings
         dspLeft.DataContext = _vm.LeftReconSource
-        'dspRight.DataContext = _vm.RightReconSource
+        dspRight.DataContext = _vm.RightReconSource
+
+        dspLeft.CBDataSources.SelectedItem = _vm.LeftReconSource.ReconDataSource
+        dspRight.CBDataSources.SelectedItem = _vm.RightReconSource.ReconDataSource
+
     End Sub
-End Class
-
-Public Class MainViewModel
-    Inherits ObservableCollection(Of Solution)
-    Implements INotifyPropertyChanged
-
-#Region "-- Setting Model Properties --"
-    Public Property DataSources As List(Of DataSource)
-        Get
-            DataSources = DataSource.DataSources
-        End Get
-        Set(value As List(Of DataSource))
-            DataSource.DataSources = value
-            'OnPropertyChanged("DataSources")
-        End Set
-    End Property
-
-    Public Property SelectedDataSource As DataSource
-    Public Property MainWindow As MainWindow
-
-    'Private _dataSources As List(Of DataSource)
-    Public Property Translations As List(Of Translation)
-        Get
-            Translations = _translations
-        End Get
-        Set(value As List(Of Translation))
-            _translations = value
-            'OnPropertyChanged("Translations")
-        End Set
-    End Property
-    Private _translations As List(Of Translation)
-
-    Public Property CompareMethods As List(Of CompareMethod)
-        Get
-            CompareMethods = _compareMethods
-        End Get
-        Set(value As List(Of CompareMethod))
-            _compareMethods = value
-        End Set
-    End Property
-    Private _compareMethods As List(Of CompareMethod)
-
-#End Region
-#Region "-- Solution Model Properties --"
-    'Surface parent properties here so two way binding works
-    Public Property Solution As Solution 'active solution
-        Get
-            Solution = _solution
-        End Get
-        Set(value As Solution)
-            _solution = value
-            Reconciliation = _solution.Reconciliations(0)
-            OnPropertyChanged("Solution")
-        End Set
-    End Property
-    Private _solution As Solution
-
-    Public Property Reconciliation As Reconciliation  ' active reconciliation from _solution
-        Get
-            Reconciliation = _reconciliation
-        End Get
-        Set(value As Reconciliation)
-            _reconciliation = value
-            LeftReconSource = _reconciliation.LeftReconSource
-
-            OnPropertyChanged("Reconciliation")
-        End Set
-    End Property
-    Private _reconciliation As Reconciliation
-
-    Public Property LeftReconSource As ReconSource  ' active reconciliation from _solution
-        Get
-            LeftReconSource = _leftReconSource
-        End Get
-        Set(value As ReconSource)
-            _leftReconSource = value
-            OnPropertyChanged("LeftReconSource")
-        End Set
-    End Property
-    Private _leftReconSource As ReconSource
-
-#End Region
-
-#Region "-- Notify Property Change --"
-    Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
-
-    Public Sub OnPropertyChanged(propertyName As String)
-        Me.CheckPropertyName(propertyName)
-        RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
-    End Sub
-
-    <Conditional("DEBUG")>
-    <DebuggerStepThrough>
-    Public Sub CheckPropertyName(propertyName As String)
-        If TypeDescriptor.GetProperties(Me)(propertyName) Is Nothing Then
-            Throw New Exception($"Could not find property: {propertyName}")
-        End If
-    End Sub
-#End Region
-
 
 End Class

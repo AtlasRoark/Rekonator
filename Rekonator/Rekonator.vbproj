@@ -75,10 +75,13 @@
     <Compile Include="Models\MessageEntry.vb" />
     <Compile Include="Models\Parameter.vb" />
     <Compile Include="SQL.vb" />
+    <Compile Include="ViewModel\MainViewModel.vb" />
     <Compile Include="View\AggToTextConverter.vb" />
+    <Compile Include="View\BoolToCaptionConverter.vb" />
     <Compile Include="View\Client.xaml.vb">
       <DependentUpon>Client.xaml</DependentUpon>
     </Compile>
+    <Compile Include="View\ComparisionToTextConverter.vb" />
     <Compile Include="View\DataSourcePage.xaml.vb">
       <DependentUpon>DataSourcePage.xaml</DependentUpon>
     </Compile>

@@ -7,56 +7,154 @@
              mc:Ignorable="d"
              d:DesignHeight="450"
              d:DesignWidth="800">
-    
+
     <UserControl.Resources>
+        <local:MockMainViewModel x:Key="MockMainViewModel" />
         <local:AggToTextConverter x:Key="AggToTextConverter" />
+        <local:BoolToCaptionConverter x:Key="BoolToCaptionConverter" />
+        <Style TargetType="{x:Type DataGrid}">
+            <Setter Property="ColumnHeaderStyle"
+                    Value="{DynamicResource DGCHeaderStyle}" />
+        </Style>
+        <Style TargetType="{x:Type DataGridColumnHeader}"
+               BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+            <Setter Property="Background"
+                    Value="{DynamicResource AccentColorBrush4}" />
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource AccentColorBrush}" />
+            <Setter Property="BorderThickness"
+                    Value="1" />
+            <Setter Property="Width"
+                    Value="Auto" />
+        </Style>
     </UserControl.Resources>
 
-    <Grid  >
-        <StackPanel>
-            <!--List of DataSources bound to AppViewModel Binding SelectedDataSource, Mode=OneWay-->
-            <ComboBox x:Name="CBDataSources" ItemsSource="{Binding DataSources}"
-                      DisplayMemberPath="DataSourceName"
-                      SelectedItem="{Binding ReconDataSource.DataSourceName, Mode=OneWay}"  SelectionChanged="CBDataSources_SelectionChanged" />
-            <!--DataSource in selected value is in the ReconSource object IsSynchronizedWithCurrentItem="True"-->
-            <ComboBox ItemsSource="{Binding Translations}"
-                      DisplayMemberPath="TranslationName" />
-            <TextBlock Text="Selected ReconDataSource.Name" />
-            <TextBox Text="{Binding ReconDataSource.DataSourceName}" />
-            <TextBlock Text="Is Loaded" />
-            <CheckBox IsChecked="{Binding IsLoaded}" />
-            <TextBlock Text="Recon Table" />
-            <TextBox Text="{Binding  ReconTable}" />
-            <DataGrid ItemsSource="{Binding Parameters}" />
-                                  <TextBlock Text="Where" />
-                <TextBox Text="{Binding WhereClause}" />
-            <DataGrid ItemsSource="{Binding Columns}" />
-            <TextBox Text="{Binding Aggregations, Converter={StaticResource AggToTextConverter}}" />
-            <!--<TextBlock Text="Parameters" />-->
-                
-                <!-- 
-            DataContext="{StaticResource reconSouce}"
-            Property ReconDataSource As DataSource
-    Property ReconTable As String
-    Property IsLoaded As Boolean
-    Property Parameters As Dictionary(Of String, String)
-    Property LoadedSet As DataTable
-    Property Where As String
-    Property Fields As String()
-    Property Types As String()
-    Property Aggregations As List(Of Aggregate)
-            
-            
-            <DataGrid ItemsSource="{Binding Fields}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Field Name"
-                                                Binding="{Binding FieldName}" />
-                        </DataGrid.Columns>
->
-                    </DataGrid>-->
-            <Button Name="btnLoad"
-                    Content="Load" />
-        </StackPanel>
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <Grid ScrollViewer.CanContentScroll="True"
+            HorizontalAlignment="Center"
+          Margin="15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="5*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto"
+                               MinHeight="40" />
+                <RowDefinition Height="Auto"
+                               MinHeight="40" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-    </Grid>
+            <TextBlock Grid.Row="0"
+                       Grid.Column="0"
+                       VerticalAlignment="Bottom"
+                       Text="Data Source" />
+            <ComboBox Grid.Row="0"
+                      Grid.Column="1"
+                      x:Name="CBDataSources"
+                      ItemsSource="{Binding DataSources}"
+                      DisplayMemberPath="DataSourceName"
+                      SelectedValue="{Binding DataSource}"
+                      SelectedValuePath="{Binding ReconDataSource}"
+                      SelectionChanged="CBDataSources_SelectionChanged"
+                      HorizontalAlignment="Left" />
+
+            <TextBlock Grid.Row="1"
+                       Grid.Column="0"
+                       VerticalAlignment="Bottom"
+                       Text="Source Table" />
+            <ComboBox Grid.Row="1"
+                      Grid.Column="1"
+                      ItemsSource="{Binding Translations}"
+                      DisplayMemberPath="TranslationName" />
+
+            <TextBlock Grid.Row="2"
+                       Grid.Column="0"
+                       VerticalAlignment="Bottom"
+                       Text="Rekonator Table" />
+            <TextBox Grid.Row="2"
+                     Grid.Column="1"
+                     Text="{Binding ReconTable}" />
+
+            <TextBlock Grid.Row="3"
+                       Grid.Column="0"
+                       Text="Parameters"
+                       Margin="0,15,0,0" />
+
+            <DataGrid Grid.Row="4"
+                      Grid.Column="0"
+                      Grid.ColumnSpan="2"
+                      ItemsSource="{Binding Parameters}"
+                      AutoGenerateColumns="False"
+                      BorderBrush="{DynamicResource AccentColorBrush4}"
+                      BorderThickness="2">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name"
+                                        Binding="{Binding ParameterName}" />
+                    <DataGridTextColumn Header="Value"
+                                        Binding="{Binding ParameterValue}" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <TextBlock Grid.Row="5"
+                       Grid.Column="0"
+                       Text="Columns"
+                       Margin="0,15,0,0" />
+
+            <DataGrid Grid.Row="6"
+                      Grid.Column="0"
+                      Grid.ColumnSpan="2"
+                      ItemsSource="{Binding Columns}"
+                      AutoGenerateColumns="False"
+                      BorderBrush="{DynamicResource AccentColorBrush4}"
+                      BorderThickness="2">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name"
+                                        Binding="{Binding ColumnName}" />
+                    <DataGridTextColumn Header="Type"
+                                        Binding="{Binding ColumnType}" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <TextBlock Grid.Row="7"
+                       Grid.Column="0"
+                       Grid.ColumnSpan="2"
+                       Text="Apply Where Clause"
+                       Margin="0,15,0,0" />
+
+            <TextBox Grid.Row="8"
+                     Grid.Column="0"
+                     Grid.ColumnSpan="2" TextWrapping="Wrap"
+                     Text="{Binding WhereClause}" />
+
+            <TextBlock Grid.Row="9"
+                       Grid.Column="0"
+                       Text="Aggregations"
+                       Margin="0,15,0,0" />
+
+            <TextBox Grid.Row="10"
+                     Grid.Column="0"
+                     Grid.ColumnSpan="2"
+                     TextWrapping="Wrap"
+                     Text="{Binding Aggregations, Converter={StaticResource AggToTextConverter}}" />
+
+            <Button Grid.Row="11"
+                    Grid.Column="0"
+                    Margin="0,15,0,0"
+                    Name="BTN_Load"
+                    Click="BTN_Load_Click"
+                    Content="{Binding IsLoaded, Converter={StaticResource BoolToCaptionConverter}}" />
+
+        </Grid>
+    </ScrollViewer>
+
 </UserControl>

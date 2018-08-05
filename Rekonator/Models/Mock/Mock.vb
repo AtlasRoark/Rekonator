@@ -10,13 +10,7 @@ Public Class Mock
         'CompareMethod.Add("Date Equals", AddressOf ValueComparer.CompareDateValues)
         'sm.CompareMethods = CompareMethod.CompareMethods
 
-        Dim ds As New List(Of DataSource)
-        ds.Add(New DataSource With {.DataSourceName = "Excel"})
-        ds.Add(New DataSource With {.DataSourceName = "Intact"})
-        ds.Add(New DataSource With {.DataSourceName = "QuickBooks"})
-        ds.Add(New DataSource With {.DataSourceName = "ServiceTitan"})
-        ds.Add(New DataSource With {.DataSourceName = "SQL"})
-        vm.DataSources = ds
+
     End Sub
 
     Public Async Function MockLoadSolutionAsync(solutionNumber As Integer) As Task(Of Solution)
@@ -128,6 +122,16 @@ Public Class Mock
         Catch ex As Exception
             Application.ErrorMessage("Error Mocking Solution")
         End Try
+    End Function
+
+    Friend Function MockLoadDataSources() As List(Of DataSource)
+        Dim ds As New List(Of DataSource)
+        ds.Add(New DataSource With {.DataSourceName = "Excel"})
+        ds.Add(New DataSource With {.DataSourceName = "Intact"})
+        ds.Add(New DataSource With {.DataSourceName = "QuickBooks", .IsSlowLoading = True})
+        ds.Add(New DataSource With {.DataSourceName = "ServiceTitan"})
+        ds.Add(New DataSource With {.DataSourceName = "SQL"})
+        Return ds
     End Function
 
 

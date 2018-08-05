@@ -17,12 +17,13 @@
                       LeftWindowCommandsOverlayBehavior="Never"
                       RightWindowCommandsOverlayBehavior="Never"
                       WindowButtonCommandsOverlayBehavior="Never"
-                      mc:Ignorable="d"
+                      mc:Ignorable="d"                     
                       WindowState="Maximized"
                       WindowStyle="ThreeDBorderWindow">
     <!--Background="{StaticResource MaterialDesignPaper}"-->
 
     <Window.Resources>
+        <local:MockMainViewModel x:Key="MockMainViewModel" />
         <local:ValueToBrushConverter x:Key="ValueToBrushConverter" />
 
         <Style x:Key="ReconGrid"
@@ -110,17 +111,19 @@
                              Position="Top"
                              Width="800"
                              Height="400">
-                <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Grid  HorizontalAlignment="Center" Margin="50">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="3*" />
                         <ColumnDefinition Width="10" />                        
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="5*" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition />
-                        <RowDefinition />
-                        <RowDefinition />
-                        <RowDefinition />
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Solution Name"
@@ -157,6 +160,14 @@
                                              Grid.Column="2"
                                              SelectedDate="{Binding Reconciliation.ToDate}" />
 
+                    <TextBlock Grid.Row="4"
+                               Grid.Column="0"
+                               Text="Completeness Comparision(s)"
+                               VerticalAlignment="Center" />
+                    <TextBox Grid.Row="4"
+                             Grid.Column="2"
+                             TextWrapping="Wrap"
+                             Text="{Binding CompletenessComparisions}" />
                     <!--<StackPanel VerticalAlignment="Center"
                                 HorizontalAlignment="Center">
                         <StackPanel Orientation="Horizontal">
@@ -183,17 +194,17 @@
         </controls:FlyoutsControl>
     </controls:MetroWindow.Flyouts>
 
-    <Grid>
+    <Grid d:DataContext="{StaticResource MockMainViewModel}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="*" />
             <ColumnDefinition Width="3*" />
-            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="28" />
+            <RowDefinition Height="36" />
             <RowDefinition Height="3*" />
-            <RowDefinition Height="28" />
-            <RowDefinition Height="1*" />
+            <RowDefinition Height="36" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0"
@@ -202,11 +213,11 @@
                         HorizontalAlignment="Center">
                 <Button Content="Left"
                         Name="btnLeft"
-                        HorizontalAlignment="Center"
+                        HorizontalAlignment="Center" Margin="0,3,0,0"
                         Click="btnLeft_Click" />
                 <!--<TextBlock Text="Left" Style="{DynamicResource MaterialDesignTitleTextBlock}" />-->
                 <ToggleButton IsChecked="{Binding ElementName=LeftFlyout, Path=IsOpen}"
-                              Cursor="Hand">
+                              Cursor="Hand" Margin="10,0,0,0">
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
@@ -237,9 +248,11 @@
                 <Button Content="Right"
                         Name="btnRight"
                         HorizontalAlignment="Center"
+                        Margin="0,3,0,0"
                         Click="btnRight_Click" />
                 <ToggleButton IsChecked="{Binding ElementName=RightFlyout, Path=IsOpen}"
-                              Cursor="Hand">
+                              Cursor="Hand"
+                              Margin="10,0,0,0">
 
                 </ToggleButton>
             </StackPanel>
@@ -265,12 +278,15 @@
                     Grid.Column="1">
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Center">
-                <TextBlock Text="Differ"
-                       Style="{DynamicResource MaterialDesignTitleTextBlock}"
-                       HorizontalAlignment="Center" />
+                <Button Content="Differ"
+                        Name="btnDiffer"
+                        HorizontalAlignment="Center"
+                        Margin="0,3,0,0"
+                        Click="btnDiffer_Click" />
+                
             <ToggleButton IsChecked="{Binding ElementName=TopFlyout, Path=IsOpen}"
                           Cursor="Hand"
-                          Margin="5,0,0,0">
+                              Margin="10,4,0,0">
             </ToggleButton>
             </StackPanel>
         </StackPanel>
@@ -309,7 +325,7 @@
                         Click="btnMatch_Click" />
                 <ToggleButton IsChecked="{Binding ElementName=BottomFlyout, Path=IsOpen}"
                               Cursor="Hand"
-                              Margin="5,0,0,0">
+                              Margin="10,0,0,0">
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
