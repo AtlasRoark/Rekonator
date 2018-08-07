@@ -8,7 +8,8 @@ Public Class SystemDialog
         Dim openFileDialog As New OpenFileDialog With {
             .Multiselect = False,
             .Filter = "Rekonator files (*.rek)|*.rek",
-            .InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            .InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            .Title = "Open Rekonator Solution"
         }
 
         If openFileDialog.ShowDialog() = True Then
@@ -19,6 +20,20 @@ Public Class SystemDialog
         Return String.Empty
     End Function
 
+    Public Function SaveFile() As String
+        Dim saveFileDialog As New SaveFileDialog With {
+            .Filter = "Rekonator files (*.rek)|*.rek",
+            .InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            .AddExtension = True,
+            .DefaultExt = "rek",
+            .Title = "Save Rekonator Solution"
+        }
+
+        If saveFileDialog.ShowDialog() = True Then
+            Return saveFileDialog.FileName
+        End If
+        Return String.Empty
+    End Function
 #Region "IDisposable Support"
     Private disposedValue As Boolean ' To detect redundant calls
 

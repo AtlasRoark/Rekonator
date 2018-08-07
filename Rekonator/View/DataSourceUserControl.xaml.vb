@@ -1,4 +1,4 @@
-﻿Partial Class DataSourcePage
+﻿Partial Class DataSourceUserContol
 
     Private _isLoaded As Boolean = False
 
@@ -16,7 +16,7 @@
         Dim cBox As ComboBox = TryCast(sender, ComboBox)
         'Dim appVM As AppViewModel = TryCast(cBox.DataContext, AppViewModel)
         Dim reconSource As ReconSource = TryCast(Me.DataContext, ReconSource)
-        If reconSource IsNot Nothing Then reconSource.ReconDataSource = e.AddedItems(0)
+        If reconSource IsNot Nothing AndAlso e.AddedItems.Count > 0 Then reconSource.ReconDataSource = e.AddedItems(0)
         'Dim userControl As UserControl = Utility.FindAncestor(cBox, GetType(UserControl))
         'If reconSource.InstantiatedSide = ReconSource.Side.Left Then
         'Window.Reconciliation.LeftReconSource.ReconDataSource = e.AddedItems(0)

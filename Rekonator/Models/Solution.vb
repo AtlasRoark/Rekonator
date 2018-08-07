@@ -9,7 +9,7 @@ Public Class Solution
     Public Sub New()
     End Sub
 
-    Private _solutionName As String
+    Private _solutionName As String = "(New Solution)"
 
     Public Property SolutionName As String
         Get
@@ -60,15 +60,36 @@ Public Class Solution
         formatter.Serialize(fs, solution)
         fs.Close()
     End Sub
+
+    Friend Sub MakeNewReconcilition(ByRef solution As Solution)
+        If solution.Reconciliations Is Nothing Then
+            solution.Reconciliations = New List(Of Reconciliation)
+            Dim r As New Reconciliation With {
+                .CompletenessComparisions = New List(Of Comparision),
+                .MatchingComparisions = New List(Of Comparision)
+            }
+            solution.Reconciliations.Add(r)
+            Dim recon As New ReconSource With {
+                .Aggregations = New List(Of Aggregate),
+                .Columns = New List(Of Column),
+                .Parameters = New List(Of Parameter)
+            }
+            solution.Reconciliations.Last.LeftReconSource = recon
+            solution.Reconciliations.Last.RightReconSource = recon
+        End If
+    End Sub
+
     Public Shared Function LoadSolution(fileName As String) As Solution
-        Dim fs As New FileStream(fileName, FileMode.Open)
-        Dim formatter As IFormatter = New BinaryFormatter()
-        Dim loadedSolution As Solution = DirectCast(formatter.Deserialize(fs), Solution)
-        'For Each r In loadedSolution.Reconciliations
-        '    For Each c As Comparision In r.CompletenessComparisions.Union(r.MatchingComparisions)
-        '        c.ComparisionMethod = CompareMethod.GetMethod(c.ComparisionMethod.Name)
-        '    Next
-        'Next
+        Try
+            Dim fs As New FileStream(fileName, FileMode.Open)
+            Dim formatter As IFormatter = New BinaryFormatter()
+            Dim loadedSolution As Solution = TryCast(formatter.Deserialize(fs), Solution)
+            If loadedSolution Is Nothing Then Throw New Exception("The loaded solution was empty")
+            Return loadedSolution
+        Catch ex As Exception
+            Application.ErrorMessage($"Error opening solution file {fileName}: {ex.Message}")
+        End Try
+        Return Nothing
     End Function
 End Class
 

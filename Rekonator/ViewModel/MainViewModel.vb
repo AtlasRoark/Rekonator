@@ -46,7 +46,7 @@ Public Class MainViewModel
             MessageLog = _messages
         End Get
         Set(value As List(Of MessageEntry))
-            'OnPropertyChanged("MessageLog")
+            OnPropertyChanged("MessageLog")
         End Set
     End Property
     Private _messages As New List(Of MessageEntry)
@@ -59,7 +59,9 @@ Public Class MainViewModel
         End Get
         Set(value As Solution)
             _solution = value
-            Reconciliation = _solution.Reconciliations(0)
+            If _solution IsNot Nothing Then
+                Reconciliation = _solution.Reconciliations(0)
+            End If
             OnPropertyChanged("Solution")
         End Set
     End Property
@@ -71,12 +73,26 @@ Public Class MainViewModel
         End Get
         Set(value As Reconciliation)
             _reconciliation = value
-            LeftReconSource = _reconciliation.LeftReconSource
-            RightReconSource = _reconciliation.RightReconSource
+            If _reconciliation IsNot Nothing Then
+                LeftReconSource = _reconciliation.LeftReconSource
+                RightReconSource = _reconciliation.RightReconSource
+            End If
             OnPropertyChanged("Reconciliation")
         End Set
     End Property
     Private _reconciliation As Reconciliation
+
+    'Public Property NewReconciliation As String
+    '    Get
+    '        NewReconciliation = _newReconciliation
+    '    End Get
+    '    Set(value As String)
+    '        _newReconciliation = value
+    '        If _reconciliation Is Nothing Then
+    '        End If
+    '    End Set
+    'End Property
+    'Private _newReconciliation As String
 
     Public Property LeftReconSource As ReconSource  ' active reconciliation from _solution
         Get

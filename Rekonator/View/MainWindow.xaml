@@ -17,7 +17,7 @@
                       LeftWindowCommandsOverlayBehavior="Never"
                       RightWindowCommandsOverlayBehavior="Never"
                       WindowButtonCommandsOverlayBehavior="Never"
-                      mc:Ignorable="d"                     
+                      mc:Ignorable="d"
                       WindowState="Maximized"
                       WindowStyle="ThreeDBorderWindow">
     <!--Background="{StaticResource MaterialDesignPaper}"-->
@@ -63,8 +63,20 @@
         <controls:WindowCommands>
             <TextBlock Text="Rekonator"
                        Style="{DynamicResource MaterialDesignTitleTextBlock}" />
-            <Button Name="btnOpenFile"
-                    Click="btnOpenFile_Click"
+            <Button Name="ButtonNew"
+                    Click="ButtonNew_Click"
+                    ToolTip="New Solution">
+                <Rectangle Width="22"
+                           Height="22"
+                           Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}">
+                    <Rectangle.OpacityMask>
+                        <VisualBrush Stretch="Uniform"
+                                     Visual="{StaticResource appbar_new}" />
+                    </Rectangle.OpacityMask>
+                </Rectangle>
+            </Button>
+            <Button Name="ButtonOpenFile"
+                    Click="ButtonOpenFile_Click"
                     ToolTip="Open File">
                 <Rectangle Width="22"
                            Height="22"
@@ -75,8 +87,8 @@
                     </Rectangle.OpacityMask>
                 </Rectangle>
             </Button>
-            <Button Name="btnSaveFile"
-                    Click="btnSaveFile_Click"
+            <Button Name="ButtonSaveFile"
+                    Click="ButtonSaveFile_Click"
                     ToolTip="Save File">
                 <Rectangle Width="22"
                            Height="22"
@@ -98,97 +110,27 @@
                              Header="Left Data"
                              Position="Left"
                              Width="400">
-                <local:DataSourcePage x:Name="dspLeft" />
+                <local:DataSourceUserContol x:Name="dspLeft" />
             </controls:Flyout>
             <controls:Flyout x:Name="RightFlyout"
                              Header="Right Data"
                              Position="Right"
                              Width="400">
-                <local:DataSourcePage x:Name="dspRight" />
+                <local:DataSourceUserContol x:Name="dspRight" />
             </controls:Flyout>
             <controls:Flyout x:Name="TopFlyout"
                              Header="Settings"
                              Position="Top"
                              Width="800"
                              Height="400">
-                <Grid  HorizontalAlignment="Center" Margin="50">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="10" />                        
-                        <ColumnDefinition Width="5*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Solution Name"
-                                       VerticalAlignment="Center" />
-                    <TextBox Grid.Row="0"
-                             Grid.Column="2" Text="{Binding Solution.SolutionName}" />
-                    
-                    <TextBlock Grid.Row="1" Grid.Column="0"
-                               Text="Reconciliation"
-                               VerticalAlignment="Center" />
-                    <ComboBox Grid.Row="1"
-                              Grid.Column="2"
-                              Name="CBSolution"
-                              SelectionChanged="CBSolution_SelectionChanged"
-                              Foreground="Black"
-                              FontSize="13"
-                              Margin="20,0,0,0"
-                              ItemsSource="{Binding Solution.Reconciliations}"
-                              SelectedItem="{Binding Reconciliation}"
-                              DisplayMemberPath="ReconciliationName" />
-
-                    <TextBlock Grid.Row="2"
-                               Grid.Column="0"
-                               Text="From Date"
-                               VerticalAlignment="Center" />
-                    <controls:DateTimePicker Grid.Row="2"
-                                             Grid.Column="2"
-                                             SelectedDate="{Binding Reconciliation.FromDate}" />
-                    <TextBlock Grid.Row="3"
-                               Grid.Column="0"
-                               Text="To Date"
-                               VerticalAlignment="Center" />
-                    <controls:DateTimePicker Grid.Row="3"
-                                             Grid.Column="2"
-                                             SelectedDate="{Binding Reconciliation.ToDate}" />
-
-                    <TextBlock Grid.Row="4"
-                               Grid.Column="0"
-                               Text="Completeness Comparision(s)"
-                               VerticalAlignment="Center" />
-                    <TextBox Grid.Row="4"
-                             Grid.Column="2"
-                             TextWrapping="Wrap"
-                             Text="{Binding CompletenessComparisions}" />
-                    <!--<StackPanel VerticalAlignment="Center"
-                                HorizontalAlignment="Center">
-                        <StackPanel Orientation="Horizontal">
-                            
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            
-                        </StackPanel>
-                    </StackPanel>-->
-
-                </Grid>
+                <local:SolutionUserControl />
             </controls:Flyout>
             <controls:Flyout x:Name="BottomFlyout"
                              Header="Messages"
                              Position="Bottom"
                              Width="800"
                              Height="400">
-                <ListBox x:Name="lbMessageLog"
-                         ItemsSource="{Binding MessageLog}"
-                         DisplayMemberPath="MessageText" />
-
+                <local:MessageUserControl x:Name="UserControlMessageLog" />
             </controls:Flyout>
 
         </controls:FlyoutsControl>
@@ -213,11 +155,13 @@
                         HorizontalAlignment="Center">
                 <Button Content="Left"
                         Name="btnLeft"
-                        HorizontalAlignment="Center" Margin="0,3,0,0"
+                        HorizontalAlignment="Center"
+                        Margin="0,3,0,0"
                         Click="btnLeft_Click" />
                 <!--<TextBlock Text="Left" Style="{DynamicResource MaterialDesignTitleTextBlock}" />-->
                 <ToggleButton IsChecked="{Binding ElementName=LeftFlyout, Path=IsOpen}"
-                              Cursor="Hand" Margin="10,0,0,0">
+                              Cursor="Hand"
+                              Margin="10,0,0,0">
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
@@ -283,11 +227,11 @@
                         HorizontalAlignment="Center"
                         Margin="0,3,0,0"
                         Click="btnDiffer_Click" />
-                
-            <ToggleButton IsChecked="{Binding ElementName=TopFlyout, Path=IsOpen}"
-                          Cursor="Hand"
+
+                <ToggleButton IsChecked="{Binding ElementName=TopFlyout, Path=IsOpen}"
+                              Cursor="Hand"
                               Margin="10,4,0,0">
-            </ToggleButton>
+                </ToggleButton>
             </StackPanel>
         </StackPanel>
         <DataGrid x:Name="dgDiffer"

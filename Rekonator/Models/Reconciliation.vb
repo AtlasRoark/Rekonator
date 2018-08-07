@@ -3,7 +3,7 @@ Imports Rekonator
 
 <Serializable()>
 Public Class Reconciliation
-    Property ReconciliationName As String
+    Property ReconciliationName As String = "(New Reconciliation)"
     Property LeftReconSource As ReconSource
     Property RightReconSource As ReconSource
     Property CompletenessComparisions As List(Of Comparision)

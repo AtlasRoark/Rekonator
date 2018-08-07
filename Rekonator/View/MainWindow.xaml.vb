@@ -1,6 +1,4 @@
-﻿Imports System.Collections.ObjectModel
-Imports System.ComponentModel
-Imports System.Data
+﻿Imports System.Data
 Imports MahApps.Metro.Controls.Dialogs
 Imports Rekonator
 
@@ -79,20 +77,38 @@ Partial Class MainWindow
 
 
 #Region "-- Commands --"
-    Private Sub btnOpenFile_Click(sender As Object, e As RoutedEventArgs)
+    Private Sub ButtonNew_Click(sender As Object, e As RoutedEventArgs)
+        Dim solution As New Solution
+        _vm.Solution.MakeNewReconcilition(solution)
+        _vm.Solution = solution
+
+        Me.TopFlyout.IsOpen = True
+    End Sub
+    Private Sub ButtonOpenFile_Click(sender As Object, e As RoutedEventArgs)
         Using sd As New SystemDialog
             _solutionPath = sd.OpenFile()
         End Using
+        For i = 1 To 20
+            AddMessage("test", True)
+        Next
         If Not String.IsNullOrEmpty(_solutionPath) Then
-            '_solution = Solution.LoadSolution(_solutionPath)
+
+            _vm.Solution = Solution.LoadSolution(_solutionPath)
 
         End If
     End Sub
 
-    Private Sub btnSaveFile_Click(sender As Object, e As RoutedEventArgs)
-
-        Exit Sub
-
+    Private Sub ButtonSaveFile_Click(sender As Object, e As RoutedEventArgs)
+        If _vm IsNot Nothing AndAlso _vm.Solution IsNot Nothing Then
+            If String.IsNullOrEmpty(_solutionPath) Then
+                Using sd As New SystemDialog
+                    _solutionPath = sd.SaveFile
+                End Using
+            End If
+            If Not String.IsNullOrEmpty(_solutionPath) Then
+                Solution.SaveSolution(_solutionPath, _vm.Solution)
+            End If
+        End If
     End Sub
 
     Public Sub btnLeft_Click(sender As Object, e As RoutedEventArgs)
@@ -144,13 +160,21 @@ Partial Class MainWindow
         Me.Close()
     End Sub
 
+    Friend Sub ChangeReconciliation(rc As Reconciliation)
+        If rc IsNot Nothing Then
+            _vm.Reconciliation = rc
+            'Task.Factory.StartNew(Sub() Configure(solutionName)).
+            '                  ContinueWith(Sub() LoadReconSources()).
+            '                  ContinueWith(Sub() Test())
+        End If
+    End Sub
 #End Region
 
     Public Sub New()
-
         ' This call is required by the designer.
         InitializeComponent()
         _vm = New MainViewModel
+
         DataContext = _vm
         Application.MessageFunc = AddressOf AddMessage
 
@@ -590,14 +614,14 @@ Partial Class MainWindow
     End Sub
 
 
-    Public Sub AddMessage(messageText As String, isError As Boolean)
+    Public Sub AddMessage(messageText As String, Optional isError As Boolean = False)
         Try
             If Not BottomFlyout.IsOpen Then BottomFlyout.IsOpen = True
             _vm.MessageLog.Add(New MessageEntry With {.MessageText = messageText, .IsError = isError})
-            'OnPropertyChanged("MessageLog")
-            lbMessageLog.SelectedIndex = lbMessageLog.Items.Count - 1
-            lbMessageLog.ScrollIntoView(lbMessageLog.SelectedItem)
-
+            With UserControlMessageLog.ListBoxMessageLog
+                .SelectedIndex = .Items.Count - 1
+                .ScrollIntoView(.SelectedItem)
+            End With
         Catch
 
         End Try
@@ -618,22 +642,13 @@ Partial Class MainWindow
         End If
     End Sub
 
-    Private Sub CBSolution_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
-        Dim cb As ComboBox = TryCast(sender, ComboBox)
-        If cb IsNot Nothing Then
-            Dim rc As Reconciliation = TryCast(cb.SelectedValue, Reconciliation)
-            If rc IsNot Nothing Then
-                _vm.Reconciliation = rc
-                'Task.Factory.StartNew(Sub() Configure(solutionName)).
-                '                  ContinueWith(Sub() LoadReconSources()).
-                '                  ContinueWith(Sub() Test())
-            End If
-        End If
-    End Sub
+
 
     Private Sub MainWindow_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
         dspLeft.CBDataSources.DataContext = _vm 'Model for App Settings
         dspRight.CBDataSources.DataContext = _vm 'Model for App Settings
+        UserControlMessageLog.DataContext = _vm 'Model for App Settings
+        'Top UserControlSolution bound to vm.Reconciliation
         dspLeft.DataContext = _vm.LeftReconSource
         dspRight.DataContext = _vm.RightReconSource
 
@@ -642,4 +657,7 @@ Partial Class MainWindow
 
     End Sub
 
+    Private Sub dgDiffer_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles dgDiffer.SelectionChanged
+
+    End Sub
 End Class

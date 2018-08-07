@@ -49,6 +49,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System" />
@@ -76,20 +78,20 @@
     <Compile Include="Models\Parameter.vb" />
     <Compile Include="SQL.vb" />
     <Compile Include="ViewModel\MainViewModel.vb" />
-    <Compile Include="View\AggToTextConverter.vb" />
+    <Compile Include="Converters\AggToTextConverter.vb" />
     <Compile Include="View\BoolToCaptionConverter.vb" />
     <Compile Include="View\Client.xaml.vb">
       <DependentUpon>Client.xaml</DependentUpon>
     </Compile>
-    <Compile Include="View\ComparisionToTextConverter.vb" />
-    <Compile Include="View\DataSourcePage.xaml.vb">
-      <DependentUpon>DataSourcePage.xaml</DependentUpon>
+    <Compile Include="Converters\ComparisionToTextConverter.vb" />
+    <Compile Include="View\DataSourceUserControl.xaml.vb">
+      <DependentUpon>DataSourceUserControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Get\GetSQL.vb" />
     <Compile Include="View\MainWindow.xaml.vb">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="View\ValueToBrushConverter.vb" />
+    <Compile Include="Converters\ValueToBrushConverter.vb" />
     <Compile Include="Application.xaml.vb">
       <DependentUpon>Application.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -97,6 +99,12 @@
     <Compile Include="Helpers\ColNameComparer.vb" />
     <Compile Include="Helpers\SystemDialog.vb" />
     <Compile Include="Helpers\ValueComparer.vb" />
+    <Compile Include="View\MessageUserControl.xaml.vb">
+      <DependentUpon>MessageUserControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\SolutionUserControl.xaml.vb">
+      <DependentUpon>SolutionUserControl.xaml</DependentUpon>
+    </Compile>
     <Page Include="Resources\Icons.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -105,13 +113,21 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="View\DataSourcePage.xaml">
+    <Page Include="View\DataSourceUserControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="View\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\MessageUserControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\SolutionUserControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
