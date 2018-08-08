@@ -23,7 +23,6 @@
     <!--Background="{StaticResource MaterialDesignPaper}"-->
 
     <Window.Resources>
-        <local:MockMainViewModel x:Key="MockMainViewModel" />
         <local:ValueToBrushConverter x:Key="ValueToBrushConverter" />
 
         <Style x:Key="ReconGrid"
@@ -59,6 +58,9 @@
 
     </Window.Resources>
 
+    <Window.DataContext>
+        <local:MainViewModel />
+    </Window.DataContext>
     <controls:MetroWindow.LeftWindowCommands>
         <controls:WindowCommands>
             <TextBlock Text="Rekonator"
@@ -136,7 +138,7 @@
         </controls:FlyoutsControl>
     </controls:MetroWindow.Flyouts>
 
-    <Grid d:DataContext="{StaticResource MockMainViewModel}">
+    <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="3*" />

@@ -4,11 +4,14 @@ Imports Rekonator
 
 Partial Class MainWindow
 
-    Private _vm As MainViewModel
+    Private _vm As New MainViewModel
+    Private _vmLeft As New ReconSourceViewModel
+    Private _vmRight As New ReconSourceViewModel
     Private _solutionPath As String = String.Empty
     'Cant do notify prop change on datatables.  
-    Private _right As New DataTable
+    Private _left As New DataTable
     Private _leftDetails As New DataTable
+    Private _right As New DataTable
     Private _rightDetails As New DataTable
     Private _differ As New DataTable
     Private _match As New DataTable
@@ -34,42 +37,6 @@ Partial Class MainWindow
     'Private _obsSolution As ObservableCollection(Of Solution)
 
 
-    Public Property LeftSet As DataView
-        Get
-            LeftSet = _left.AsDataView
-        End Get
-        Set(value As DataView)
-            'OnPropertyChanged("LeftSet")
-        End Set
-    End Property
-    Private _left As New DataTable
-
-    Public Property RightSet As DataView
-        Get
-            RightSet = _right.AsDataView
-        End Get
-        Set(value As DataView)
-            'OnPropertyChanged("RightSet")
-        End Set
-    End Property
-
-    Public Property DifferSet As DataView
-        Get
-            DifferSet = _differ.AsDataView
-        End Get
-        Set(value As DataView)
-            'OnPropertyChanged("DifferSet")
-        End Set
-    End Property
-
-    Public Property MatchSet As DataView
-        Get
-            MatchSet = _match.AsDataView
-        End Get
-        Set(value As DataView)
-            'OnPropertyChanged("MatchSet")
-        End Set
-    End Property
 
 
 #End Region
@@ -78,23 +45,17 @@ Partial Class MainWindow
 
 #Region "-- Commands --"
     Private Sub ButtonNew_Click(sender As Object, e As RoutedEventArgs)
-        Dim solution As New Solution
-        _vm.Solution.MakeNewReconcilition(solution)
-        _vm.Solution = solution
-
+        _vm.Solution = Solution.MakeNewReconcilition()
+        _vmLeft.ReconSource = _vm.Solution.Reconciliations.Last.LeftReconSource
+        _vmRight.ReconSource = _vm.Solution.Reconciliations.Last.RightReconSource
         Me.TopFlyout.IsOpen = True
     End Sub
     Private Sub ButtonOpenFile_Click(sender As Object, e As RoutedEventArgs)
         Using sd As New SystemDialog
             _solutionPath = sd.OpenFile()
         End Using
-        For i = 1 To 20
-            AddMessage("test", True)
-        Next
         If Not String.IsNullOrEmpty(_solutionPath) Then
-
             _vm.Solution = Solution.LoadSolution(_solutionPath)
-
         End If
     End Sub
 
@@ -112,12 +73,18 @@ Partial Class MainWindow
     End Sub
 
     Public Sub btnLeft_Click(sender As Object, e As RoutedEventArgs)
-        Application.Current.Dispatcher.BeginInvoke(Async Function()
-                                                       Dim r As MessageDialogResult = Await ShowMessageAsync("This is the title", "Some message", MessageDialogStyle.AffirmativeAndNegative)
-                                                   End Function)
-        _vm.MessageLog.Clear()
+        'Application.Current.Dispatcher.BeginInvoke(Async Function()
+        '                                               Dim r As MessageDialogResult = Await ShowMessageAsync("This is the title", "Some message", MessageDialogStyle.AffirmativeAndNegative)
+        '                                           End Function)
+        '_vm.MessageLog.Clear()
         '_reconciliation.LeftReconSource.IsLoaded = False
         'btnMatch_Click(sender, e)
+        _vm.Reconciliation.LeftReconSource.ReconTable = Now.ToShortTimeString
+        _vmLeft.ReconSource = _vm.Reconciliation.LeftReconSource
+        _vm.Reconciliation.ReconciliationName = Now.ToShortTimeString
+        '_vm.Reconciliations = _vm.Soltion
+        _vm.Reconciliation = _vm.Reconciliation
+
     End Sub
     Private Sub btnRight_Click(sender As Object, e As RoutedEventArgs)
         _vm.MessageLog.Clear()
@@ -145,9 +112,9 @@ Partial Class MainWindow
                 Using sql As New SQL
 
                     _left = sql.GetDataTable($"Select * From [dbo].[{_vm.Reconciliation.LeftReconSource.ReconTable}] Where [Txn ID] = '{dr.ItemArray(3)}' AND [GL ACCOUNT] = '{dr.ItemArray(4)}'")
-                    LeftSet = _left.AsDataView
+                    _vm.LeftSet = _left.AsDataView
                     _right = sql.GetDataTable($"Select * From [dbo].[{_vm.Reconciliation.RightReconSource.ReconTable}] Where [TxnID] = '{dr.ItemArray(5)}' AND [Account] = '{dr.ItemArray(6)}'")
-                    RightSet = _right.AsDataView
+                    _vm.RightSet = _right.AsDataView
                 End Using
 
             End If
@@ -173,15 +140,8 @@ Partial Class MainWindow
     Public Sub New()
         ' This call is required by the designer.
         InitializeComponent()
-        _vm = New MainViewModel
-
         DataContext = _vm
         Application.MessageFunc = AddressOf AddMessage
-
-        Using m As New Mock
-            _vm.DataSources = m.MockLoadDataSources()
-            _vm.Solution = Task.Run(Function() m.MockLoadSolutionAsync(1)).GetAwaiter().GetResult() 'Model for Solution
-        End Using
 
     End Sub
 
@@ -189,9 +149,9 @@ Partial Class MainWindow
         _leftDetails.Reset()
         _rightDetails.Reset()
         _differ.Reset()
-        DifferSet = _differ.AsDataView
+        _vm.DifferSet = _differ.AsDataView
         _match.Reset()
-        MatchSet = _match.AsDataView
+        _vm.MatchSet = _match.AsDataView
 
         If _left.Rows.Count = 0 Or _right.Rows.Count = 0 Then Exit Sub
 
@@ -201,15 +161,15 @@ Partial Class MainWindow
         Using sql As New SQL
 
             _match = sql.GetDataTable(Reconciliation.GetMatchSelect(_vm.Reconciliation))
-            MatchSet = _match.AsDataView
+            _vm.MatchSet = _match.AsDataView
             _differ = sql.GetDataTable(Reconciliation.GetDifferSelect(_vm.Reconciliation))
             If _differ.AsDataView Is Nothing Then Exit Sub
-            DifferSet = _match.AsDataView
+            _vm.DifferSet = _match.AsDataView
             _left = sql.GetDataTable(Reconciliation.GetLeftSelect(_vm.Reconciliation))
             If _left.AsDataView Is Nothing Then Exit Sub
-            LeftSet = _left.AsDataView
+            _vm.LeftSet = _left.AsDataView
             _right = sql.GetDataTable(Reconciliation.GetRightSelect(_vm.Reconciliation))
-            RightSet = _right.AsDataView
+            _vm.RightSet = _right.AsDataView
         End Using
 
         'If _reconciliation.LeftReconSource.Aggregations IsNot Nothing Then DoAggregation(_reconciliation.LeftReconSource)
@@ -645,15 +605,26 @@ Partial Class MainWindow
 
 
     Private Sub MainWindow_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
-        dspLeft.CBDataSources.DataContext = _vm 'Model for App Settings
-        dspRight.CBDataSources.DataContext = _vm 'Model for App Settings
+        'dspLeft.CBDataSources.DataContext = _vm 'Model for App Settings
+        'dspRight.CBDataSources.DataContext = _vm 'Model for App Settings
         UserControlMessageLog.DataContext = _vm 'Model for App Settings
         'Top UserControlSolution bound to vm.Reconciliation
-        dspLeft.DataContext = _vm.LeftReconSource
-        dspRight.DataContext = _vm.RightReconSource
+        Using m As New Mock
+            Dim ds As List(Of DataSource) = m.MockLoadDataSources()
+            _vmLeft.DataSources = ds
+            _vmRight.DataSources = ds
+            _vm.Solution = Task.Run(Function() m.MockLoadSolutionAsync(1)).GetAwaiter().GetResult() 'Model for Solution
+        End Using
+        _vmLeft.MainViewModel = _vm
+        _vmRight.MainViewModel = _vm
 
-        dspLeft.CBDataSources.SelectedItem = _vm.LeftReconSource.ReconDataSource
-        dspRight.CBDataSources.SelectedItem = _vm.RightReconSource.ReconDataSource
+        dspLeft.DataContext = _vmLeft
+        dspRight.DataContext = _vmRight
+        _vmLeft.ReconSource = _vm.Reconciliation.LeftReconSource
+        _vmRight.ReconSource = _vm.Reconciliation.RightReconSource
+
+        'dspLeft.CBDataSources.SelectedItem = _vm.LeftReconSource.ReconDataSource
+        'dspRight.CBDataSources.SelectedItem = _vm.RightReconSource.ReconDataSource
 
     End Sub
 

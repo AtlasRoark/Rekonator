@@ -10,7 +10,6 @@
              d:DesignWidth="800">
 
     <UserControl.Resources>
-        <local:MockMainViewModel x:Key="MockMainViewModel" />
         <local:AggToTextConverter x:Key="AggToTextConverter" />
         <local:BoolToCaptionConverter x:Key="BoolToCaptionConverter" />
         <Style TargetType="{x:Type DataGrid}">
@@ -30,18 +29,20 @@
         </Style>
     </UserControl.Resources>
 
+    <UserControl.DataContext>
+        <local:ReconSourceViewModel />
+    </UserControl.DataContext>
+
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
         <Grid ScrollViewer.CanContentScroll="True"
             HorizontalAlignment="Center"
           Margin="15">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="3*"/>
                 <ColumnDefinition Width="5*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto"
-                               MinHeight="40" />
                 <RowDefinition Height="Auto"
                                MinHeight="40" />
                 <RowDefinition Height="Auto" />
@@ -58,46 +59,48 @@
             <TextBlock Grid.Row="0"
                        Grid.Column="0"
                        VerticalAlignment="Bottom"
+                       Margin="0,0,10,0"
                        Text="Data Source" />
             <ComboBox Grid.Row="0"
                       Grid.Column="1"
                       x:Name="CBDataSources"
                       ItemsSource="{Binding DataSources}"
                       DisplayMemberPath="DataSourceName"
-                      SelectedValue="{Binding DataSource}"
-                      SelectedValuePath="{Binding ReconDataSource}"
+                      SelectedValue="{Binding ReconSource.ReconDataSource.DataSourceName}"
+                      SelectedValuePath="DataSourceName"
                       SelectionChanged="CBDataSources_SelectionChanged"
                       HorizontalAlignment="Left" />
 
-            <TextBlock Grid.Row="1"
+            <!--<TextBlock Grid.Row="1"
                        Grid.Column="0"
                        VerticalAlignment="Bottom"
                        Text="Source Table" />
             <ComboBox Grid.Row="1"
                       Grid.Column="1"
                       ItemsSource="{Binding Translations}"
-                      DisplayMemberPath="TranslationName" />
+                      DisplayMemberPath="TranslationName" />-->
+
+            <TextBlock Grid.Row="1"
+                       Grid.Column="0"
+                       VerticalAlignment="Bottom" Margin="0,0,10,0"
+                       Text="Rekonator Table" />
+            <TextBox Grid.Row="1"
+                     Grid.Column="1"
+                     Text="{Binding ReconSource.ReconTable}" />
 
             <TextBlock Grid.Row="2"
-                       Grid.Column="0"
-                       VerticalAlignment="Bottom"
-                       Text="Rekonator Table" />
-            <TextBox Grid.Row="2"
-                     Grid.Column="1"
-                     Text="{Binding ReconTable}" />
-
-            <TextBlock Grid.Row="3"
                        Grid.Column="0"
                        Text="Parameters"
                        Margin="0,15,0,0" />
 
-            <DataGrid Grid.Row="4"
+            <DataGrid Grid.Row="3"
                       Grid.Column="0"
                       Grid.ColumnSpan="2"
-                      ItemsSource="{Binding Parameters}"
+                      RowHeaderWidth="0"
+                      ItemsSource="{Binding ReconSource.Parameters}"
                       AutoGenerateColumns="False"
                       BorderBrush="{DynamicResource AccentColorBrush4}"
-                      BorderThickness="2">
+                      BorderThickness="1">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Name"
                                         Binding="{Binding ParameterName}" />
@@ -106,18 +109,19 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <TextBlock Grid.Row="5"
+            <TextBlock Grid.Row="4"
                        Grid.Column="0"
                        Text="Columns"
                        Margin="0,15,0,0" />
 
-            <DataGrid Grid.Row="6"
+            <DataGrid Grid.Row="5"
                       Grid.Column="0"
                       Grid.ColumnSpan="2"
-                      ItemsSource="{Binding Columns}"
+                      RowHeaderWidth="0"
+                      ItemsSource="{Binding ReconSource.Columns}"
                       AutoGenerateColumns="False"
                       BorderBrush="{DynamicResource AccentColorBrush4}"
-                      BorderThickness="2">
+                      BorderThickness="1">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Name"
                                         Binding="{Binding ColumnName}" />
@@ -126,34 +130,34 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <TextBlock Grid.Row="7"
+            <TextBlock Grid.Row="6"
                        Grid.Column="0"
                        Grid.ColumnSpan="2"
                        Text="Apply Where Clause"
                        Margin="0,15,0,0" />
 
-            <TextBox Grid.Row="8"
+            <TextBox Grid.Row="7"
                      Grid.Column="0"
                      Grid.ColumnSpan="2" TextWrapping="Wrap"
-                     Text="{Binding WhereClause}" />
+                     Text="{Binding ReconSource.WhereClause}" />
 
-            <TextBlock Grid.Row="9"
+            <TextBlock Grid.Row="8"
                        Grid.Column="0"
                        Text="Aggregations"
                        Margin="0,15,0,0" />
 
-            <TextBox Grid.Row="10"
+            <TextBox Grid.Row="9"
                      Grid.Column="0"
                      Grid.ColumnSpan="2"
                      TextWrapping="Wrap"
-                     Text="{Binding Aggregations, Converter={StaticResource AggToTextConverter}}" />
+                     Text="{Binding ReconSource.Aggregations, Converter={StaticResource AggToTextConverter}}" />
 
-            <Button Grid.Row="11"
+            <Button Grid.Row="10"
                     Grid.Column="0"
                     Margin="0,15,0,0"
                     Name="BTN_Load"
                     Click="BTN_Load_Click"
-                    Content="{Binding IsLoaded, Converter={StaticResource BoolToCaptionConverter}}" />
+                    Content="{Binding ReconSource.IsLoaded, Converter={StaticResource BoolToCaptionConverter}}" />
 
         </Grid>
     </ScrollViewer>

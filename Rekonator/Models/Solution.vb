@@ -61,7 +61,8 @@ Public Class Solution
         fs.Close()
     End Sub
 
-    Friend Sub MakeNewReconcilition(ByRef solution As Solution)
+    Public Shared Function MakeNewReconcilition(Optional solution As Solution = Nothing) As Solution
+        If solution Is Nothing Then solution = New Solution
         If solution.Reconciliations Is Nothing Then
             solution.Reconciliations = New List(Of Reconciliation)
             Dim r As New Reconciliation With {
@@ -76,8 +77,9 @@ Public Class Solution
             }
             solution.Reconciliations.Last.LeftReconSource = recon
             solution.Reconciliations.Last.RightReconSource = recon
+            Return solution
         End If
-    End Sub
+    End Function
 
     Public Shared Function LoadSolution(fileName As String) As Solution
         Try

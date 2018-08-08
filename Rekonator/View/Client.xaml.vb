@@ -43,15 +43,6 @@ Partial Class Client
         _dispatcherTimer.Start()
     End Sub
 
-    ''' <summary>
-    ''' Get timer output.
-    ''' </summary>
-
-
-    ''' <summary>
-    ''' Timer event handler.
-    ''' </summary>
-
 
 
     Private Sub dispatcherTimer_Tick(ByVal sender As Object, ByVal e As EventArgs)

@@ -4,8 +4,8 @@ Imports Rekonator
 <Serializable()>
 Public Class Reconciliation
     Property ReconciliationName As String = "(New Reconciliation)"
-    Property LeftReconSource As ReconSource
-    Property RightReconSource As ReconSource
+    Property LeftReconSource As New ReconSource
+    Property RightReconSource As New ReconSource
     Property CompletenessComparisions As List(Of Comparision)
     Property MatchingComparisions As List(Of Comparision)
     Property FromDate As DateTime = DateTime.MinValue

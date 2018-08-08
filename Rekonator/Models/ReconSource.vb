@@ -2,12 +2,12 @@
 
 <Serializable()>
 Public Class ReconSource
-    Property ReconDataSource As DataSource
-    Property ReconTable As String
+    Property ReconDataSource As New DataSource
+    Property ReconTable As String = String.Empty
     Property IsLoaded As Boolean
     Property Parameters As New List(Of Parameter)
     Property LoadedSet As DataTable
-    Property WhereClause As String
+    Property WhereClause As String = String.Empty
     Property Columns As New List(Of Column)
     Property Aggregations As New List(Of Aggregate)
     Property InstantiatedSide As Side

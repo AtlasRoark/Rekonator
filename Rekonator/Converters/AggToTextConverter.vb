@@ -21,7 +21,7 @@ Public Class AggToTextConverter
                 sb.Length -= 1
                 sb.Append(";")
             Next
-            sb.Length -= 1
+            If sb.Length > 0 Then sb.Length -= 1
             Return sb.ToString
         End If
     End Function

@@ -79,6 +79,8 @@
     <Compile Include="SQL.vb" />
     <Compile Include="ViewModel\MainViewModel.vb" />
     <Compile Include="Converters\AggToTextConverter.vb" />
+    <Compile Include="ViewModel\ReconSourceViewModel.vb" />
+    <Compile Include="ViewModel\ViewModelBase.vb" />
     <Compile Include="View\BoolToCaptionConverter.vb" />
     <Compile Include="View\Client.xaml.vb">
       <DependentUpon>Client.xaml</DependentUpon>
@@ -207,7 +209,7 @@
       <Version>1.1.3</Version>
     </PackageReference>
     <PackageReference Include="MaterialDesignThemes">
-      <Version>2.4.0.1044</Version>
+      <Version>2.4.1.1101</Version>
     </PackageReference>
     <PackageReference Include="MaterialDesignThemes.MahApps">
       <Version>0.0.11</Version>
