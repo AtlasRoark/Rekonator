@@ -90,8 +90,7 @@ Public Class Mock
                     .ReconTable = "lah_sql_accountdetail",
                     .IsLoaded = True,
                     .Parameters = sqlParams,
-                    .Aggregations = aggregates,
-                    .InstantiatedSide = ReconSource.Side.Left}
+                    .Aggregations = aggregates}
 
                     'Right
                     aggOps = New List(Of AggregateOperation)
@@ -108,8 +107,7 @@ Public Class Mock
                     .ReconTable = "lah_qb_pldetail",
                     .IsLoaded = True,
                     .Parameters = sqlParams,
-                    .Aggregations = aggregates,
-                    .InstantiatedSide = ReconSource.Side.Rigth}
+                    .Aggregations = aggregates}
 
                     completenessComparisions = New List(Of Comparision)
                     completenessComparisions.Add(New Comparision With {.LeftColumn = "TXN ID", .RightColumn = "TxnID", .ComparisionTest = ComparisionType.TextCaseEquals})

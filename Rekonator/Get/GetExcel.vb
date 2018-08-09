@@ -10,8 +10,12 @@ Public Class GetExcel
     Public Function Load(reconSource As ReconSource) As Boolean
         Dim reconTable As String = reconSource.ReconTable
         Dim filePath As String = reconSource.Parameters.GetParameter("FilePath")
+        If String.IsNullOrWhiteSpace(filePath) Then filePath = reconSource.Parameters.GetParameter("Workbook")
         Dim worksheetName As String = reconSource.Parameters.GetParameter("Worksheet")
         Application.Message($"Loading Table {reconTable} from Excel Worksheet {worksheetName}")
+        Dim testField As Integer = 2
+        Dim fillDown As Integer() = {0, 1}
+        Dim rowCount As Integer = 0
         Try
             Using fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite) 'FileShare is ReadWrite even though FileAccess is Read Only.  This allows file to be open if it open in another process e.g. Excel
                 Using excelReader = ExcelReaderFactory.CreateReader(fileStream)
@@ -44,6 +48,8 @@ Public Class GetExcel
                     'Get Field Types and First Row
                     If Not excelReader.Read() Then Return Nothing
                     Dim rowList As New List(Of Object)
+                    Dim lastRowList As New List(Of Object)
+
                     For idx = 0 To fieldCount - 1
                         If typeList.Count = 0 Then
                             typeList.Add(excelReader.GetFieldType(idx).Name)
@@ -53,27 +59,43 @@ Public Class GetExcel
                     Next
 
                     Using sql As New SQL(reconTable, fieldCount, fieldList, typeList)
-                        If Not sql.CreateTable() Then
+                        If sql.CreateTable() Then
+                            Application.Message($"Table: '{reconTable}' created.")
+                        Else
                             Return False
                         End If
 
                         Do
-                            If Not sql.InsertRow(rowList) Then
-                                Return False
+                            If Not String.IsNullOrWhiteSpace(rowList(testField)) Then
+
+                                If sql.InsertRow(rowList) Then
+                                    rowCount += 1
+
+                                Else
+                                    Return False
+                                End If
                             End If
 
                             'Get Next Row
                             If Not excelReader.Read() Then Exit Do
+                            lastRowList.Clear()
+                            lastRowList.AddRange(rowList)
                             rowList.Clear()
                             For idx = 0 To fieldCount - 1
-                                rowList.Add(excelReader.GetValue(idx))
+                                Dim value As Object = excelReader.GetValue(idx)
+                                If String.IsNullOrWhiteSpace(value) Then
+                                    If fillDown.Contains(idx) Then
+                                        value = lastRowList(idx)
+                                    End If
+                                End If
+                                rowList.Add(value)
                             Next
                         Loop
                     End Using
 
                 End Using
             End Using
-            Application.Message("Completed.")
+            Application.Message($"Excel Load Completed. {rowCount} rows.")
             Return True
         Catch ex As Exception
             Application.ErrorMessage($"Error Loading Excel: {ex.Message}")

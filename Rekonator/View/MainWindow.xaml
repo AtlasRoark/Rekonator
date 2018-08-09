@@ -58,9 +58,9 @@
 
     </Window.Resources>
 
-    <Window.DataContext>
+    <!--<Window.DataContext>
         <local:MainViewModel />
-    </Window.DataContext>
+    </Window.DataContext>-->
     <controls:MetroWindow.LeftWindowCommands>
         <controls:WindowCommands>
             <TextBlock Text="Rekonator"
@@ -112,26 +112,29 @@
                              Header="Left Data"
                              Position="Left"
                              Width="400">
-                <local:DataSourceUserContol x:Name="dspLeft" />
+                <local:DataSourceUserContol Side="Left"
+                                            ReconSource="{Binding Reconciliation.LeftReconSource}"
+                                            DataSources="{Binding DataSources}" />
             </controls:Flyout>
             <controls:Flyout x:Name="RightFlyout"
                              Header="Right Data"
                              Position="Right"
                              Width="400">
-                <local:DataSourceUserContol x:Name="dspRight" />
+                <local:DataSourceUserContol Side="Right"
+                                            ReconSource="{Binding Reconciliation.RightReconSource}" DataSources="{Binding DataSources}" />
             </controls:Flyout>
             <controls:Flyout x:Name="TopFlyout"
                              Header="Settings"
                              Position="Top"
-                             Width="800"
-                             Height="400">
+                             Width="600"
+                             Height="300">
                 <local:SolutionUserControl />
             </controls:Flyout>
             <controls:Flyout x:Name="BottomFlyout"
                              Header="Messages"
-                             Position="Bottom"
-                             Width="800"
-                             Height="400">
+                             Position="Bottom" IsAutoCloseEnabled="True"
+                             Width="600"
+                             Height="300">
                 <local:MessageUserControl x:Name="UserControlMessageLog" />
             </controls:Flyout>
 
@@ -155,15 +158,17 @@
                     Grid.Column="0">
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Center">
-                <Button Content="Left"
+                <!--<Button Content="Left"
                         Name="btnLeft"
                         HorizontalAlignment="Center"
                         Margin="0,3,0,0"
-                        Click="btnLeft_Click" />
-                <!--<TextBlock Text="Left" Style="{DynamicResource MaterialDesignTitleTextBlock}" />-->
+                        Click="btnLeft_Click" />-->
+                <TextBlock Text="Left"
+                           Margin="0,10,0,0"
+                           Style="{DynamicResource MaterialDesignTitleTextBlock}" />
                 <ToggleButton IsChecked="{Binding ElementName=LeftFlyout, Path=IsOpen}"
                               Cursor="Hand"
-                              Margin="10,0,0,0">
+                              Margin="10,10,0,0">
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
@@ -191,14 +196,17 @@
                     Grid.Column="2">
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Center">
-                <Button Content="Right"
+                <!--<Button Content="Right"
                         Name="btnRight"
                         HorizontalAlignment="Center"
                         Margin="0,3,0,0"
-                        Click="btnRight_Click" />
+                        Click="btnRight_Click" />-->
+                <TextBlock Text="Right"
+                           Margin="0,10,0,0"
+                           Style="{DynamicResource MaterialDesignTitleTextBlock}" />
                 <ToggleButton IsChecked="{Binding ElementName=RightFlyout, Path=IsOpen}"
                               Cursor="Hand"
-                              Margin="10,0,0,0">
+                              Margin="10,10,0,0">
 
                 </ToggleButton>
             </StackPanel>
@@ -225,14 +233,14 @@
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Center">
                 <Button Content="Differ"
-                        Name="btnDiffer"
+                        Name="ButtonDiffer"
                         HorizontalAlignment="Center"
-                        Margin="0,3,0,0"
-                        Click="btnDiffer_Click" />
+                        Margin="0,5,0,0"
+                        Click="ButtonDiffer_Click" />
 
                 <ToggleButton IsChecked="{Binding ElementName=TopFlyout, Path=IsOpen}"
-                              Cursor="Hand"
-                              Margin="10,4,0,0">
+                              Cursor="Hand" VerticalContentAlignment="Center"
+                              Margin="10,6,0,0">
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
@@ -266,9 +274,9 @@
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Center">
                 <Button Content="Match"
-                        Name="btnMatch"
+                        Name="ButtonMatch"
                         HorizontalAlignment="Center"
-                        Click="btnMatch_Click" />
+                        Click="ButtonMatch_Click" />
                 <ToggleButton IsChecked="{Binding ElementName=BottomFlyout, Path=IsOpen}"
                               Cursor="Hand"
                               Margin="10,0,0,0">

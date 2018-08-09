@@ -5,8 +5,6 @@ Imports Rekonator
 Partial Class MainWindow
 
     Private _vm As New MainViewModel
-    Private _vmLeft As New ReconSourceViewModel
-    Private _vmRight As New ReconSourceViewModel
     Private _solutionPath As String = String.Empty
     'Cant do notify prop change on datatables.  
     Private _left As New DataTable
@@ -46,17 +44,21 @@ Partial Class MainWindow
 #Region "-- Commands --"
     Private Sub ButtonNew_Click(sender As Object, e As RoutedEventArgs)
         _vm.Solution = Solution.MakeNewReconcilition()
-        _vmLeft.ReconSource = _vm.Solution.Reconciliations.Last.LeftReconSource
-        _vmRight.ReconSource = _vm.Solution.Reconciliations.Last.RightReconSource
         Me.TopFlyout.IsOpen = True
     End Sub
+
     Private Sub ButtonOpenFile_Click(sender As Object, e As RoutedEventArgs)
         Using sd As New SystemDialog
             _solutionPath = sd.OpenFile()
         End Using
+        If Not String.IsNullOrWhiteSpace(_solutionPath) Then LoadSolution()
+    End Sub
+
+    Private Sub LoadSolution()
         If Not String.IsNullOrEmpty(_solutionPath) Then
             _vm.Solution = Solution.LoadSolution(_solutionPath)
         End If
+        Me.TopFlyout.IsOpen = True
     End Sub
 
     Private Sub ButtonSaveFile_Click(sender As Object, e As RoutedEventArgs)
@@ -68,36 +70,59 @@ Partial Class MainWindow
             End If
             If Not String.IsNullOrEmpty(_solutionPath) Then
                 Solution.SaveSolution(_solutionPath, _vm.Solution)
+                Application.Message($"{_solutionPath} saved.")
             End If
         End If
     End Sub
 
-    Public Sub btnLeft_Click(sender As Object, e As RoutedEventArgs)
-        'Application.Current.Dispatcher.BeginInvoke(Async Function()
-        '                                               Dim r As MessageDialogResult = Await ShowMessageAsync("This is the title", "Some message", MessageDialogStyle.AffirmativeAndNegative)
-        '                                           End Function)
-        '_vm.MessageLog.Clear()
-        '_reconciliation.LeftReconSource.IsLoaded = False
-        'btnMatch_Click(sender, e)
-        _vm.Reconciliation.LeftReconSource.ReconTable = Now.ToShortTimeString
-        _vmLeft.ReconSource = _vm.Reconciliation.LeftReconSource
-        _vm.Reconciliation.ReconciliationName = Now.ToShortTimeString
-        '_vm.Reconciliations = _vm.Soltion
-        _vm.Reconciliation = _vm.Reconciliation
+    Public Sub LoadReconSource(side As ReconSource.SideName)
+        Dim reconSource As ReconSource
+        If side.Equals(ReconSource.SideName.Left) Then
+            reconSource = _vm.Reconciliation.LeftReconSource
+        Else
+            reconSource = _vm.Reconciliation.RightReconSource
+        End If
 
+        Dim r As MessageDialogResult = Nothing
+        If reconSource.IsLoaded And reconSource.ReconDataSource.IsSlowLoading Then
+            Application.Current.Dispatcher.BeginInvoke(Async Function()
+                                                           r = Await ShowMessageAsync("Rekonator", "Do you want to reload data source?", MessageDialogStyle.AffirmativeAndNegative)
+                                                       End Function)
+            If r = MessageDialogResult.Negative Then Exit Sub
+        End If
+
+        Select Case reconSource.ReconDataSource.DataSourceName
+            Case "Excel"
+                Using excel As New GetExcel
+                    reconSource.IsLoaded = excel.Load(reconSource)
+                End Using
+            Case "SQL"
+                Using sql As New GetSQL
+                    reconSource.IsLoaded = sql.Load(reconSource, _vm.Reconciliation.FromDate, _vm.Reconciliation.ToDate)
+                End Using
+            Case "QuickBooks"
+                If reconSource.IsLoaded = True And reconSource.ReconDataSource.IsSlowLoading Then
+                    If reconSource.ReconDataSource.IsSlowLoading Then
+                    End If
+                End If
+                Using qbd As New GetQBD
+                    reconSource.IsLoaded = qbd.LoadReport(reconSource, _vm.Reconciliation.FromDate, _vm.Reconciliation.ToDate)
+                End Using
+        End Select
     End Sub
+
+
     Private Sub btnRight_Click(sender As Object, e As RoutedEventArgs)
         _vm.MessageLog.Clear()
         '_reconciliation.RightReconSource.IsLoaded = False
         'btnMatch_Click(sender, e)
     End Sub
-    Private Sub btnDiffer_Click(sender As Object, e As RoutedEventArgs)
+    Private Sub ButtonDiffer_Click(sender As Object, e As RoutedEventArgs)
 
     End Sub
-    Private Sub btnMatch_Click(sender As Object, e As RoutedEventArgs)
+    Private Sub ButtonMatch_Click(sender As Object, e As RoutedEventArgs)
         _vm.MessageLog.Clear() 'Test Agg QB P/L Detail
-        'Task.Factory.StartNew(Sub() LoadReconSources()).
-        '                          ContinueWith(Sub() Test())
+        Task.Factory.StartNew(Sub() Rekonate())
 
         'Task.Factory.StartNew(Sub() Configure("QB P/L Detail")).
         '                          ContinueWith(Sub() LoadReconSources()).
@@ -142,10 +167,9 @@ Partial Class MainWindow
         InitializeComponent()
         DataContext = _vm
         Application.MessageFunc = AddressOf AddMessage
-
     End Sub
 
-    Private Sub Test()
+    Private Sub Rekonate()
         _leftDetails.Reset()
         _rightDetails.Reset()
         _differ.Reset()
@@ -153,7 +177,7 @@ Partial Class MainWindow
         _match.Reset()
         _vm.MatchSet = _match.AsDataView
 
-        If _left.Rows.Count = 0 Or _right.Rows.Count = 0 Then Exit Sub
+        'If _left.Rows.Count = 0 Or _right.Rows.Count = 0 Then Exit Sub
 
         Using sql As New SQL
             sql.DropTables({"Left", "Right", "Match", "Differ"})
@@ -161,6 +185,7 @@ Partial Class MainWindow
         Using sql As New SQL
 
             _match = sql.GetDataTable(Reconciliation.GetMatchSelect(_vm.Reconciliation))
+            If _match.AsDataView Is Nothing Then Exit Sub
             _vm.MatchSet = _match.AsDataView
             _differ = sql.GetDataTable(Reconciliation.GetDifferSelect(_vm.Reconciliation))
             If _differ.AsDataView Is Nothing Then Exit Sub
@@ -605,27 +630,15 @@ Partial Class MainWindow
 
 
     Private Sub MainWindow_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
-        'dspLeft.CBDataSources.DataContext = _vm 'Model for App Settings
-        'dspRight.CBDataSources.DataContext = _vm 'Model for App Settings
-        UserControlMessageLog.DataContext = _vm 'Model for App Settings
+        'UserControlMessageLog.DataContext = _vm 'Model for App Settings
         'Top UserControlSolution bound to vm.Reconciliation
         Using m As New Mock
-            Dim ds As List(Of DataSource) = m.MockLoadDataSources()
-            _vmLeft.DataSources = ds
-            _vmRight.DataSources = ds
-            _vm.Solution = Task.Run(Function() m.MockLoadSolutionAsync(1)).GetAwaiter().GetResult() 'Model for Solution
+            _vm.DataSources = m.MockLoadDataSources()
+            '_vm.Solution = Task.Run(Function() m.MockLoadSolutionAsync(1)).GetAwaiter().GetResult() 'Model for Solution
         End Using
-        _vmLeft.MainViewModel = _vm
-        _vmRight.MainViewModel = _vm
 
-        dspLeft.DataContext = _vmLeft
-        dspRight.DataContext = _vmRight
-        _vmLeft.ReconSource = _vm.Reconciliation.LeftReconSource
-        _vmRight.ReconSource = _vm.Reconciliation.RightReconSource
-
-        'dspLeft.CBDataSources.SelectedItem = _vm.LeftReconSource.ReconDataSource
-        'dspRight.CBDataSources.SelectedItem = _vm.RightReconSource.ReconDataSource
-
+        _solutionPath = "C:\Users\Peter Grillo\Documents\dmr.rek"
+        LoadSolution()
     End Sub
 
     Private Sub dgDiffer_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles dgDiffer.SelectionChanged

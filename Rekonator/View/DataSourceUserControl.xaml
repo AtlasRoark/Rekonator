@@ -7,7 +7,7 @@
              Background="{StaticResource MaterialDesignPaper}"
              mc:Ignorable="d"
              d:DesignHeight="450"
-             d:DesignWidth="800">
+             d:DesignWidth="800" x:Name="ucontrol">
 
     <UserControl.Resources>
         <local:AggToTextConverter x:Key="AggToTextConverter" />
@@ -29,14 +29,10 @@
         </Style>
     </UserControl.Resources>
 
-    <UserControl.DataContext>
-        <local:ReconSourceViewModel />
-    </UserControl.DataContext>
-
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <Grid ScrollViewer.CanContentScroll="True"
+        <Grid x:Name="GridReconSource" ScrollViewer.CanContentScroll="True"
             HorizontalAlignment="Center"
-          Margin="15">
+          Margin="15" DataContext="{Binding ElementName=ucontrol}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*"/>
                 <ColumnDefinition Width="5*" />
@@ -155,8 +151,8 @@
             <Button Grid.Row="10"
                     Grid.Column="0"
                     Margin="0,15,0,0"
-                    Name="BTN_Load"
-                    Click="BTN_Load_Click"
+                    Name="ButtonLoad"
+                    Click="ButtonLoad_Click"
                     Content="{Binding ReconSource.IsLoaded, Converter={StaticResource BoolToCaptionConverter}}" />
 
         </Grid>

@@ -3,8 +3,12 @@
 Module ExtensionMethods
 
     <Extension()>
-    Public Function GetParameter(ByVal parameters As List(Of Parameter), lookup As String) As String
-        Return parameters.Where(Function(w) w.ParameterName = lookup).FirstOrDefault.ParameterValue
+    Public Function GetParameter(ByVal parameters As List(Of Parameter), parameterName As String) As String
+        If parameters.IsExist(parameterName) Then
+            Return parameters.Where(Function(w) w.ParameterName = parameterName).First.ParameterValue
+        Else
+            Return String.Empty
+        End If
     End Function
 
     <Extension()>

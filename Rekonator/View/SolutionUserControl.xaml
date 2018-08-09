@@ -46,7 +46,7 @@
                   SelectionChanged="CBReconciliation_SelectionChanged"
                   Foreground="Black"
                   FontSize="13"
-                  ItemsSource="{Binding Solution.Reconciliations}"
+                  ItemsSource="{Binding Reconciliations}" IsSynchronizedWithCurrentItem="True"
                   SelectedItem="{Binding Reconciliation}"
                   DisplayMemberPath="ReconciliationName"/>
 

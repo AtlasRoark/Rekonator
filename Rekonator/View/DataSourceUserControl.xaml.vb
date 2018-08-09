@@ -1,16 +1,63 @@
 ﻿Partial Class DataSourceUserContol
+    Inherits UserControl
 
-    Private _isLoaded As Boolean = False
+#Region "Dependency Properties"
+    Public Property DataSources As List(Of DataSource)
+        Get
+            Return GetValue(DataSourcesProperty)
+        End Get
+
+        Set(ByVal value As List(Of DataSource))
+            SetValue(DataSourcesProperty, value)
+        End Set
+    End Property
+
+    Public Shared ReadOnly DataSourcesProperty As DependencyProperty =
+                           DependencyProperty.Register("DataSources",
+                           GetType(List(Of DataSource)), GetType(DataSourceUserContol),
+                           New PropertyMetadata(Nothing))
+
+
+    Public Property Side As ReconSource.SideName
+        Get
+            Return GetValue(SideProperty)
+        End Get
+
+        Set(ByVal value As ReconSource.SideName)
+            SetValue(SideProperty, value)
+        End Set
+    End Property
+
+    Public Shared ReadOnly SideProperty As DependencyProperty =
+                           DependencyProperty.Register("Side",
+                           GetType(ReconSource.SideName), GetType(DataSourceUserContol),
+                           New PropertyMetadata(Nothing))
+
+
+    Public Property ReconSource As ReconSource
+        Get
+            Return GetValue(ReconSourceProperty)
+        End Get
+
+        Set(ByVal value As ReconSource)
+            SetValue(ReconSourceProperty, value)
+        End Set
+    End Property
+
+
+    Public Shared ReadOnly ReconSourceProperty As DependencyProperty =
+                           DependencyProperty.Register("ReconSource",
+                           GetType(ReconSource), GetType(DataSourceUserContol),
+                           New PropertyMetadata(Nothing))
+#End Region
 
     Public Sub New()
 
         ' This call is required by the designer.
         InitializeComponent()
-
+        'GridReconSource.DataContext = Me
         ' Add any initialization after the InitializeComponent() call.
-
     End Sub
-
     Private Sub CBDataSources_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
         'If Not IsLoaded Then Exit Sub
         'Dim cBox As ComboBox = TryCast(sender, ComboBox)
@@ -33,16 +80,16 @@
 
 
     Private Sub DataSourcePage_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
-        _isLoaded = True
+        'Dim userControl As UserControl = TryCast(sender, UserControl)
+        'If userControl IsNot Nothing Then
+        '    Dim mainWindow As MainWindow = Utility.FindAncestor(Me, GetType(MahApps.Metro.Controls.MetroWindow))
+
+        'End If
     End Sub
 
-    Private Sub BTN_Load_Click(sender As Object, e As RoutedEventArgs)
-        Dim reconSource As ReconSource = Me.DataContext
+    Private Sub ButtonLoad_Click(sender As Object, e As RoutedEventArgs)
         Dim mainWindow As MainWindow = Utility.FindAncestor(Me, GetType(MahApps.Metro.Controls.MetroWindow))
-
-        mainWindow.btnLeft_Click(sender, e)
-
-        'vm.LoadReconSources()
+        mainWindow.LoadReconSource(Side)
     End Sub
 End Class
 

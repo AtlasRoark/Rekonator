@@ -1,5 +1,4 @@
 ﻿Imports System.Collections.ObjectModel
-Imports System.ComponentModel
 Imports System.Data
 
 Public Class MainViewModel
@@ -9,6 +8,16 @@ Public Class MainViewModel
 
 #Region "-- App Properties --"
     Public Property MainWindow As MainWindow
+
+    Public Property DataSources As List(Of DataSource)
+        Get
+            DataSources = DataSource.DataSources
+        End Get
+        Set(value As List(Of DataSource))
+            DataSource.DataSources = value
+            OnPropertyChanged("DataSources")
+        End Set
+    End Property
 
     'Private _dataSources As List(Of DataSource)
     Public Property Translations As List(Of Translation)
@@ -51,7 +60,8 @@ Public Class MainViewModel
         Set(value As Solution)
             _solution = value
             If _solution IsNot Nothing Then
-                Reconciliation = _solution.Reconciliations(0)
+                Reconciliations = New ObservableCollection(Of Reconciliation)(_solution.Reconciliations)
+                Reconciliation = _solution.Reconciliations.FirstOrDefault
             End If
             OnPropertyChanged("Solution")
         End Set
@@ -151,7 +161,6 @@ Public Class MainViewModel
     Private _matchSet As New DataView
 #End Region
 
-
 #Region "-- Notify Property Change --"
     'Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
 
@@ -184,26 +193,6 @@ Public Class MainViewModel
         End Using
     End Sub
 
-    Private Sub LoadReconSource(reconSource As ReconSource)
-        Select Case reconSource.ReconDataSource.DataSourceName
-            Case "Excel"
-                Using excel As New GetExcel
-                    reconSource.IsLoaded = excel.Load(reconSource)
-                End Using
-            Case "SQL"
-                Using sql As New GetSQL
-                    reconSource.IsLoaded = sql.Load(reconSource, Reconciliation.FromDate, Reconciliation.ToDate)
-                End Using
-            Case "QuickBooks"
-                If reconSource.IsLoaded = True And reconSource.ReconDataSource.IsSlowLoading Then
-                    If reconSource.ReconDataSource.IsSlowLoading Then
-                    End If
-                End If
-                Using qbd As New GetQBD
-                    reconSource.IsLoaded = qbd.LoadReport(reconSource, Reconciliation.FromDate, Reconciliation.ToDate)
-                End Using
-        End Select
-    End Sub
 
 #End Region
 

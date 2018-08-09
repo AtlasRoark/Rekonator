@@ -79,7 +79,6 @@
     <Compile Include="SQL.vb" />
     <Compile Include="ViewModel\MainViewModel.vb" />
     <Compile Include="Converters\AggToTextConverter.vb" />
-    <Compile Include="ViewModel\ReconSourceViewModel.vb" />
     <Compile Include="ViewModel\ViewModelBase.vb" />
     <Compile Include="View\BoolToCaptionConverter.vb" />
     <Compile Include="View\Client.xaml.vb">

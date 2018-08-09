@@ -10,7 +10,6 @@ Public Class ReconSource
     Property WhereClause As String = String.Empty
     Property Columns As New List(Of Column)
     Property Aggregations As New List(Of Aggregate)
-    Property InstantiatedSide As Side
 
     Public Shared Function GetSelect(reconSource As ReconSource) As String
         Dim selectCommand As String = $"SELECT * FROM {reconSource.ReconTable} x"
@@ -19,9 +18,8 @@ Public Class ReconSource
         End If
         Return selectCommand
     End Function
-
-    Public Enum Side
+    Public Enum SideName
         Left
-        Rigth
+        Right
     End Enum
 End Class
