@@ -168,8 +168,6 @@ Partial Class MainWindow
         _leftDetails.Reset()
         _rightDetails.Reset()
 
-        '_vm.DifferResultSet.Add(New ResultSet(ResultSet.ResultSetName.Left))
-        '_vm.ResultSets.Add(New ResultSet(ResultSet.ResultSetName.Right))
         _vm.DifferResultSet = New ResultSet(ResultSet.ResultSetName.Differ)
         _vm.MatchResultSet = New ResultSet(ResultSet.ResultSetName.Match)
 
@@ -180,144 +178,40 @@ Partial Class MainWindow
 
         Using sql As New SQL
             sql.DropTables({"Left", "Right", "Match", "Differ"})
-        End Using
+        End Using 'Have to close connection for drop table to happen
         Using sql As New SQL
+            Dim resultSet As ResultSet = Nothing
             Dim dtTable As DataTable = Nothing
             Dim sqlCmd As String = String.Empty
 
-            _vm.MatchResultSet.SQLCommand = Reconciliation.GetMatchSelect(_vm.Reconciliation)
-            dtTable = sql.GetDataTable(_vm.MatchResultSet.SQLCommand)
+            resultSet = New ResultSet(ResultSet.ResultSetName.Match)
+            sqlCmd = Reconciliation.GetMatchSelect(_vm.Reconciliation)
+            dtTable = sql.GetDataTable(sqlCmd)
             If dtTable IsNot Nothing Then
-                _vm.MatchResultSet.ResultDataView = dtTable.AsDataView
-                _vm.MatchResultSet.RecordCount = dtTable.Rows.Count
+                resultSet.ResultDataView = dtTable.AsDataView
+                resultSet.RecordCount = dtTable.Rows.Count
             End If
-            _vm.DifferResultSet.SQLCommand = Reconciliation.GetDifferSelect(_vm.Reconciliation)
-            dtTable = sql.GetDataTable(_vm.DifferResultSet.SQLCommand)
+            resultSet.SQLCommand = sqlCmd
+            _vm.MatchResultSet = resultSet
+
+            resultSet = New ResultSet(ResultSet.ResultSetName.Differ)
+            sqlCmd = Reconciliation.GetDifferSelect(_vm.Reconciliation)
+            dtTable = sql.GetDataTable(sqlCmd)
             If dtTable IsNot Nothing Then
-                _vm.DifferResultSet.ResultDataView = dtTable.AsDataView
-                _vm.DifferResultSet.RecordCount = dtTable.Rows.Count
+                resultSet.ResultDataView = dtTable.AsDataView
+                resultSet.RecordCount = dtTable.Rows.Count
             End If
+            resultSet.SQLCommand = sqlCmd
+            _vm.DifferResultSet = resultSet
+
+
             dtTable = sql.GetDataTable(Reconciliation.GetLeftSelect(_vm.Reconciliation))
             If dtTable IsNot Nothing Then _vm.LeftSet = dtTable.AsDataView
             dtTable = sql.GetDataTable(Reconciliation.GetRightSelect(_vm.Reconciliation))
             If dtTable IsNot Nothing Then _vm.RightSet = dtTable.AsDataView
         End Using
 
-        'If _reconciliation.LeftReconSource.Aggregations IsNot Nothing Then DoAggregation(_reconciliation.LeftReconSource)
-        'If _reconciliation.RightReconSource.Aggregations IsNot Nothing Then DoAggregation(_reconciliation.RightReconSource)
     End Sub
-
-    'Private Sub DoAggregation(reconSource As ReconSource)
-
-    '    _rightDetails = _right.Copy
-    '    _right.Reset()
-    'Dim removes As New List(Of DataRow)
-    ''Dim colHeaders As DataColumn() = (From a As Aggregate In _aggregates
-    ''                                  Select New DataColumn With {
-    ''                          .ColumnName = a.AggregateName,
-    ''                          .DataType = GetType(String)
-    ''                          }
-    ''                     ).ToArray
-    ''_right.Columns.AddRange(colHeaders)
-
-    'For Each a In _aggregates
-    '    'Todo Match DataSourceName
-
-    '    Dim groups = From row In _rightDetails.AsEnumerable
-    '                 Group row By GroupKey = row.Field(Of Double)("Customer ID") Into AggGroup = Group
-    '                 Select New With {
-    '    Key GroupKey,
-    '    .EntryTotal = AggGroup.Sum(Function(r) r.Field(Of Double)("Entry")),
-    '    .EntryAvg = AggGroup.Average(Function(r) r.Field(Of Double)("Entry")),
-    '    .EntryCount = AggGroup.Count(Function(r) r.Field(Of Double)("Entry"))
-    '    }
-
-    '    Dim colHeaders As DataColumn() = (From ao As AggregateOperation In a.AggregateOperations
-    '                                      Select New DataColumn With {
-    '                              .ColumnName = ao.AggregateColumn,
-    '                              .DataType = IIf(ao.Operation = AggregateOperation.AggregateFunction.Count, GetType(Integer), GetType(String))
-    '                              }
-    '                         ).ToArray
-    '    _right.Columns.AddRange(colHeaders)
-    '    _right.Columns.Add(New DataColumn With {.ColumnName = "GroupKey", .DataType = GetType(String)})
-    '    For Each g In groups
-    '        Dim GroupRowData As New List(Of String)
-    '        For Each ao As AggregateOperation In a.AggregateOperations
-    '            GroupRowData.Add(InvokeGet(g, ao.AggregateColumn))
-    '        Next
-    '        GroupRowData.Add(g.GroupKey)
-    '        _right.Rows.Add(GroupRowData.ToArray)
-
-    '    Next
-    'Next
-
-    'End Sub
-
-
-    'Private Function Reconcile() As Tuple(Of Data.DataRow, Data.DataRow)
-    '    For Each leftitem In _left.AsEnumerable
-    '        For Each rightitem In _right.AsEnumerable
-    '            Dim matchingResult = DoCompare(leftitem, rightitem, _matchingComparisions)
-    '            If matchingResult.Item1 = True Then
-    '                InsertRow(leftitem, rightitem, _matchingComparisions, True)
-    '                Return New Tuple(Of Data.DataRow, Data.DataRow)(leftitem, rightitem)
-    '            Else
-    '                Dim completenessResult = DoCompare(leftitem, rightitem, _completenessComparisions)
-    '                If completenessResult.Item1 Then  'ids match but not complete match
-    '                    InsertRow(leftitem, rightitem, _matchingComparisions, False, matchingResult.Item2)
-    '                    Return New Tuple(Of Data.DataRow, Data.DataRow)(leftitem, rightitem)
-    '                End If
-    '            End If
-    '        Next
-    '    Next
-    '    Return Nothing
-    'End Function
-
-
-    'Private Function DoCompare(leftitem As Data.DataRow, rightitem As Data.DataRow, comparisions As List(Of Comparision), Optional IsAll As Boolean = True) As Tuple(Of Boolean, List(Of String))
-    '    Dim errorCols As New List(Of String)
-    '    For Each compare In comparisions
-    '        If IsDBNull(leftitem(compare.LeftColumn)) OrElse
-    '        IsDBNull(rightitem(compare.RightColumn)) OrElse
-    '        Not compare.ComparisionMethod.Method.Invoke(leftitem(compare.LeftColumn), rightitem(compare.RightColumn), compare.ComparisionOption) Then
-    '            errorCols.Add(compare.LeftColumn)
-    '            'rightitem.RowError = compare.ComparisionMethod.Name
-    '            If Not IsAll Then Return New Tuple(Of Boolean, List(Of String))(False, errorCols)
-    '        End If
-    '    Next
-    '    Return New Tuple(Of Boolean, List(Of String))(errorCols.Count = 0, errorCols)
-    'End Function
-
-
-    'Private Sub InsertRow(leftitem As Data.DataRow, rightitem As Data.DataRow, comparisions As List(Of Comparision), isMatch As Boolean, Optional errorCols As List(Of String) = Nothing)
-    '    Dim currentTable As DataTable = IIf(isMatch, _match, _differ)
-    '    If currentTable.Rows.Count = 0 Then
-    '        Dim colHeaders As DataColumn() = (From c As Comparision In comparisions
-    '                                          Select New DataColumn With {
-    '                              .ColumnName = c.LeftColumn + ":" + c.RightColumn,
-    '                              .DataType = IIf(isMatch, _left.Columns(c.LeftColumn).DataType, GetType(String))
-    '                              }
-    '                         ).Distinct(New ColNameComparer).ToArray
-    '        currentTable.Columns.AddRange(colHeaders)
-    '    End If
-
-    '    currentTable.Rows.Add(comparisions.Select(Function(s)
-    '                                                  If isMatch Then
-    '                                                      Return leftitem(s.LeftColumn)
-    '                                                  Else
-    '                                                      If errorCols Is Nothing Then
-    '                                                          Return leftitem(s.LeftColumn)
-    '                                                      Else
-    '                                                          If errorCols.Contains(s.LeftColumn) Then
-    '                                                              Return leftitem(s.LeftColumn).ToString + "<>" + rightitem(s.RightColumn).ToString
-    '                                                          Else
-    '                                                              Return leftitem(s.LeftColumn)
-    '                                                          End If
-    '                                                      End If
-    '                                                  End If
-    '                                              End Function).ToArray)
-
-    'End Sub
 
 
 
@@ -553,7 +447,7 @@ Partial Class MainWindow
             Case "Test Agg"
                 'Left
                 Dim excelDS As DataSource = DataSource.GetDataSource("Excel")
-                Dim excelParams As List(Of Parameter)
+                Dim excelParams As New List(Of Parameter)
                 excelParams.AddParameter("FilePath", "C:\Users\Peter Grillo\source\repos\Test.xlsx")
                 excelParams.AddParameter("Worksheet", "Agg Balance")
                 Dim columns As New List(Of Column)

@@ -19,7 +19,8 @@
 
                 <DataGrid IsReadOnly="True"
                           AutoGenerateColumns="True"
-                          BorderBrush="{StaticResource HighlightBrush}" BorderThickness="3" Margin="3">
+                          BorderBrush="{StaticResource HighlightBrush}" BorderThickness="3" Margin="3"
+                          ItemsSource="{Binding ResultSet.ResultDataView}">
                     
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell"
@@ -32,14 +33,18 @@
             </TabItem>
             <TabItem Header="Details"
                      controls:ControlsHelper.HeaderFontSize="18">
-                <StackPanel>
+                <Border BorderBrush="{StaticResource HighlightBrush}"
+                        BorderThickness="3"
+                        Margin="3">
+                <StackPanel Margin="10">
                     <StackPanel Orientation="Horizontal">
                         <TextBox Text="Record Count" />
                         <TextBox Text="{Binding ResultSet.RecordCount}" />
                     </StackPanel>
                     <TextBox Text="SQL Command" />
                     <TextBox Text="{Binding ResultSet.SQLCommand}" />
-                </StackPanel>
+                    </StackPanel>
+                </Border>
             </TabItem>
 
         </controls:MetroAnimatedTabControl>

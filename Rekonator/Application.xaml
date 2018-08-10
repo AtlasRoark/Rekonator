@@ -72,6 +72,8 @@
             <!--Reokonator Brushes-->
             <SolidColorBrush x:Key="RekonatorErrorBrush"
                              Color="{DynamicResource PinkAccent700}" />
+            <SolidColorBrush x:Key="RekonatorErrorHoverBrush"
+                             Color="{DynamicResource PinkAccent400}" />
         </ResourceDictionary>
         
     </Application.Resources>

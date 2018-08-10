@@ -133,26 +133,27 @@ Public Class Reconciliation
 
             Dim test As String = String.Empty
             Dim diff As String = String.Empty
+            Dim aPrefix As String = recon.LeftReconSource.ColumnPrefix
+            Dim bPrefix As String = recon.RightReconSource.ColumnPrefix
             Select Case c.ComparisionTest
                 Case ComparisionType.TextCaseEquals
-                    test = $"ISNULL(a.[{c.LeftColumn}],'') = ISNULL(b.[{c.RightColumn}],'')"
+                    test = $"ISNULL(a.[{aPrefix}{c.LeftColumn}],'') = ISNULL(b.[{bPrefix}{c.RightColumn}],'')"
                 Case ComparisionType.TextEquals
-                    test = $"LOWER(ISNULL(a.[{c.LeftColumn}],'')) = LOWER(ISNULL(b.[{c.RightColumn}],''))"
+                    test = $"LOWER(ISNULL(a.[{aPrefix}{c.LeftColumn}],'')) = LOWER(ISNULL(b.[{bPrefix}{c.RightColumn}],''))"
                 Case ComparisionType.NumberEquals
-                    test = $"CONVERT(DECIMAL(14,{c.Percision}), ISNULL(a.[{c.LeftColumn}],0)) = CONVERT(DECIMAL(14,{c.Percision}), ISNULL(b.[{c.RightColumn}],0))"
-                    diff = $"CONVERT(DECIMAL(14,{c.Percision}), (ISNULL(a.[{c.LeftColumn}],0) - ISNULL(b.[{c.RightColumn}],0)))"
+                    test = $"CONVERT(DECIMAL(14,{c.Percision}), ISNULL(a.[{aPrefix}{c.LeftColumn}],0)) = CONVERT(DECIMAL(14,{c.Percision}), ISNULL(b.[{bPrefix}{c.RightColumn}],0))"
+                    diff = $"CONVERT(DECIMAL(14,{c.Percision}), (ISNULL(a.[{aPrefix}{c.LeftColumn}],0) - ISNULL(b.[{bPrefix}{c.RightColumn}],0)))"
                 Case ComparisionType.DateEquals
-                    test = $"CONVERT(DATE, a.[{c.LeftColumn}]) = CONVERT(DATE, b.[{c.RightColumn}])"
+                    test = $"CONVERT(DATE, a.[{aPrefix}{c.LeftColumn}]) = CONVERT(DATE, b.[{bPrefix}{c.RightColumn}])"
                 Case ComparisionType.DateTimeEquals
-                    test = $"CONVERT(DATETIME, a.[{c.LeftColumn}]) = CONVERT(DATETIME, b.[{c.RightColumn}])"
+                    test = $"CONVERT(DATETIME, a.[{aPrefix}{c.LeftColumn}]) = CONVERT(DATETIME, b.[{bPrefix}{c.RightColumn}])"
             End Select
 
-            _sb.Append($"[{c.LeftColumn}:{c.RightColumn}] = CONCAT(a.[{c.LeftColumn}], IIf({test}, '=', '<>'), b.[{c.RightColumn}]")
+            _sb.Append($"[{c.LeftColumn}:{c.RightColumn}] = CONCAT(a.[{c.LeftColumn}], IIf({test}, '=', '<>'), b.[{bPrefix}{c.RightColumn}]")
             If String.IsNullOrEmpty(diff) Then
                 _sb.AppendLine(")")
             Else
-                _sb.AppendLine($", ' :', IIf({test}, '', {diff})")
-                _sb.AppendLine(")")
+                _sb.AppendLine($", IIf({test}, NULL, CONCAT(':', {diff})))")
             End If
             isFirst = False
         Next

@@ -156,9 +156,9 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="36" />
-            <RowDefinition Height="3*" />
+            <RowDefinition Height="3*" MinHeight="200"/>
             <RowDefinition Height="36" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0"

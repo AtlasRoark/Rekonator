@@ -161,8 +161,13 @@ Public Class SQL
     End Function
 
     Private Sub OpenConnection()
-        _connection = New SqlConnection(Application.ConnectionString)
-        _connection.Open()
+        Try
+            _connection = New SqlConnection(Application.ConnectionString)
+            _connection.Open()
+        Catch ex As Exception
+            Application.ErrorMessage($"Error Opening connection {Application.ConnectionString}: {ex.Message}")
+        End Try
+
     End Sub
 
     Private Function IsCurrency(header As String) As Boolean
