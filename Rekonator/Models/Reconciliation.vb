@@ -70,16 +70,16 @@ Public Class Reconciliation
             _sb.AppendLine($"[{c.LeftColumn}={c.RightColumn}] = a.[{c.LeftColumn}]")
             isFirst = False
         Next
-        If isAggA Then _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", True))
-        If isAggB Then _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b", True))
+        If isAggA Then _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", recon.LeftReconSource.ColumnPrefix, True))
+        If isAggB Then _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b", recon.RightReconSource.ColumnPrefix, True))
         If Not isAggA Then _sb.AppendLine(",[idA] = a.[rekonid]")
         If Not isAggB Then _sb.AppendLine(", [idB] = b.[rekonid]")
         _sb.AppendLine("INTO [Match]")
         _sb.AppendLine($"FROM {aTable}, {bTable}")
         _sb.AppendLine("WHERE")
-        _sb.AppendLine(MakeWhereComparision(recon.CompletenessComparisions))
+        _sb.AppendLine(MakeWhereComparision(recon.CompletenessComparisions, recon.LeftReconSource.ColumnPrefix, recon.RightReconSource.ColumnPrefix))
         _sb.Append("AND ")
-        _sb.AppendLine(MakeWhereComparision(recon.MatchingComparisions))
+        _sb.AppendLine(MakeWhereComparision(recon.MatchingComparisions, recon.LeftReconSource.ColumnPrefix, recon.RightReconSource.ColumnPrefix))
 
         If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) And Not isAggA Then
             _sb.AppendLine($"AND {recon.LeftReconSource.WhereClause.Replace("x!", "a")}")
@@ -156,14 +156,14 @@ Public Class Reconciliation
             End If
             isFirst = False
         Next
-        If isAggA Then _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", True))
-        If isAggB Then _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b", True))
+        If isAggA Then _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", recon.LeftReconSource.ColumnPrefix, True))
+        If isAggB Then _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b", recon.RightReconSource.ColumnPrefix, True))
         If Not isAggA Then _sb.AppendLine(",[idA] = a.[rekonid]")
         If Not isAggB Then _sb.AppendLine(", [idB] = b.[rekonid]")
         _sb.AppendLine("INTO [Differ]")
         _sb.AppendLine($"FROM {aTable}, {bTable}")
         _sb.AppendLine("WHERE")
-        _sb.AppendLine(MakeWhereComparision(recon.CompletenessComparisions))
+        _sb.AppendLine(MakeWhereComparision(recon.CompletenessComparisions, recon.LeftReconSource.ColumnPrefix, recon.RightReconSource.ColumnPrefix))
 
 
         If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) And Not isAggA Then
@@ -174,11 +174,11 @@ Public Class Reconciliation
         End If
         If isAggA Then
             _sb.AppendLine("AND")
-            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Match", "a"))
+            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Match", "a", recon.LeftReconSource.ColumnPrefix))
         End If
         If isAggB Then
             _sb.AppendLine("AND")
-            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Match", "b"))
+            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Match", "b", recon.RightReconSource.ColumnPrefix))
 
         End If
         _sb.AppendLine()
@@ -186,15 +186,15 @@ Public Class Reconciliation
         Return _sb.ToString
     End Function
 
-    Private Shared Function MakeWhereComparision(completenessComparisions As List(Of Comparision)) As String
+    Private Shared Function MakeWhereComparision(completenessComparisions As List(Of Comparision), aPrefix As String, bPrefix As String) As String
         Dim isFirst As Boolean = True
         Dim cpc As New StringBuilder
         For Each c As Comparision In completenessComparisions
             If Not isFirst Then
                 cpc.Append("And ")
             End If
-            Dim lCol As String = $"a.[{c.LeftColumn}]"
-            Dim rCol As String = $"b.[{c.RightColumn}]"
+            Dim lCol As String = $"a.[{aPrefix}{c.LeftColumn}]"
+            Dim rCol As String = $"b.[{bPrefix}{c.RightColumn}]"
             If Not String.IsNullOrWhiteSpace(c.RightFunction) Then
                 'RightFunction="SUBSTRING(b.[{c.RightColumn}], 11,  LEN(b.[{c.RightColumn}]) -10)"
                 rCol = c.RightFunction.Replace("{RightColumn}", rCol)
@@ -218,6 +218,7 @@ Public Class Reconciliation
 
     Private Shared Function MakeGroupBy(reconSource As ReconSource, cteTable As String, aorb As String, isWITH As Boolean) As String
         Dim isFirst As Boolean = True
+        Dim prefix As String = reconSource.ColumnPrefix
         Dim sb As New StringBuilder 'don't use _sb
         sb.AppendLine()
 
@@ -229,26 +230,26 @@ Public Class Reconciliation
             End If
             sb.AppendLine("(")
             sb.AppendLine("SELECT")
-            sb.AppendLine(MakeGroupByColumns(agg.GroupByColumns, aorb))
+            sb.AppendLine(MakeGroupByColumns(agg.GroupByColumns, aorb, prefix))
             For Each aop As AggregateOperation In agg.AggregateOperations
-                sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}({aorb}.[{aop.SourceColumn}])")
+                sb.AppendLine($",[{prefix}{aop.AggregateColumn}] = {aop.Operation.ToString}({aorb}.[{prefix}{aop.SourceColumn}])")
             Next
             sb.AppendLine($"FROM [dbo].[{reconSource.ReconTable}] {aorb}")
             If Not String.IsNullOrWhiteSpace(reconSource.WhereClause) Then
                 sb.AppendLine($"WHERE {reconSource.WhereClause.Replace("x!", aorb)}")
             End If
             sb.AppendLine("GROUP BY ")
-            sb.AppendLine(MakeGroupByColumns(agg.GroupByColumns, aorb))
+            sb.AppendLine(MakeGroupByColumns(agg.GroupByColumns, aorb, prefix))
             sb.AppendLine(")")
         Next
         Return sb.ToString
     End Function
 
-    Private Shared Function MakeGroupByColumns(groupbycols As String(), aorb As String, Optional isLeadingComma As Boolean = False)
+    Private Shared Function MakeGroupByColumns(groupbycols As String(), aorb As String, Optional prefix As String = "", Optional isLeadingComma As Boolean = False)
         'If Not String.IsNullOrEmpty(aorb) Then aorb += "."
         'Dim isFirst As Boolean = True
 
-        Return IIf(isLeadingComma, ",", String.Empty) + String.Join(",", groupbycols.ToList().Select(Function(s) $"{aorb}.[{s}]"))
+        Return IIf(isLeadingComma, ",", String.Empty) + String.Join(",", groupbycols.ToList().Select(Function(s) $"{aorb}.[{prefix}{s}]"))
         'Dim gb As New StringBuilder
         'For Each gbc In groupbycols
         'If Not isFirst Then
@@ -267,7 +268,7 @@ Public Class Reconciliation
 
         If isAggA Then
             _sb.AppendLine("SELECT")
-            _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a"))
+            _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", recon.LeftReconSource.ColumnPrefix))
             For Each aop As AggregateOperation In recon.LeftReconSource.Aggregations(0).AggregateOperations
                 _sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}(a.[{aop.SourceColumn}])")
             Next
@@ -278,11 +279,11 @@ Public Class Reconciliation
                 _sb.AppendLine($"{recon.LeftReconSource.WhereClause.Replace("x!.", "a.")}")
                 _sb.AppendLine("AND")
             End If
-            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Match", "a"))
+            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Match", "a", recon.LeftReconSource.ColumnPrefix))
             _sb.AppendLine("AND")
-            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Differ", "a"))
+            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Differ", "a", recon.LeftReconSource.ColumnPrefix))
             _sb.AppendLine("GROUP BY ")
-            _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a"))
+            _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", recon.LeftReconSource.ColumnPrefix))
             _sb.AppendLine()
             _sb.AppendLine("SELECT * FROM [Left] a")
         Else
@@ -308,7 +309,7 @@ Public Class Reconciliation
 
         If isAggB Then
             _sb.AppendLine("SELECT")
-            _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b"))
+            _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b", recon.RightReconSource.ColumnPrefix))
             For Each aop As AggregateOperation In recon.RightReconSource.Aggregations(0).AggregateOperations
                 _sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}(b.[{aop.SourceColumn}])")
             Next
@@ -319,11 +320,11 @@ Public Class Reconciliation
                 _sb.AppendLine($"{recon.RightReconSource.WhereClause.Replace("x!.", "b.")}")
                 _sb.AppendLine("AND")
             End If
-            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Match", "b"))
+            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Match", "b", recon.RightReconSource.ColumnPrefix))
             _sb.AppendLine("AND")
-            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Differ", "b"))
+            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Differ", "b", recon.RightReconSource.ColumnPrefix))
             _sb.AppendLine("GROUP BY ")
-            _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b"))
+            _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b", recon.RightReconSource.ColumnPrefix))
             _sb.AppendLine()
             _sb.AppendLine("SELECT * FROM [Right] b")
         Else
@@ -384,7 +385,7 @@ Public Class Reconciliation
         Return sb.ToString
     End Function
 
-    Private Shared Function MakeNotExists1(reconSource As ReconSource, tableName As String, aorb As String) As String
+    Private Shared Function MakeNotExists1(reconSource As ReconSource, tableName As String, aorb As String, prefix As String) As String
         'use aorb.  a for left, b for right.  don't use isggA or isggB since left won't have b alias and right won't have a alias
         Dim isFirst As Boolean = True
         Dim sb As New StringBuilder 'don't use _sb
@@ -397,7 +398,7 @@ Public Class Reconciliation
                 If Not isFirst Then
                     sb.Append("AND ")
                 End If
-                sb.AppendLine($"{mord}.[{gbc}] = {aorb}.[{gbc}]")
+                sb.AppendLine($"{mord}.[{prefix}{gbc}] = {aorb}.[{prefix}{gbc}]")
                 isFirst = False
             Next
         Next
@@ -405,6 +406,5 @@ Public Class Reconciliation
 
         Return sb.ToString
     End Function
-
 
 End Class

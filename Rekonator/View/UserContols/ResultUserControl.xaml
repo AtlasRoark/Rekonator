@@ -1,0 +1,48 @@
+﻿<UserControl x:Class="ResultUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
+             xmlns:local="clr-namespace:Rekonator"
+             Background="{StaticResource MaterialDesignPaper}"
+             mc:Ignorable="d"
+             d:DesignHeight="450"
+             d:DesignWidth="800"
+             x:Name="UserControlResultSet">
+    <Grid>
+        <controls:MetroAnimatedTabControl TabStripPlacement="Bottom"
+                                          DataContext="{Binding ElementName=UserControlResultSet}">
+                                          <!--"{Binding RelativeSource={RelativeSource AncestorType={x:Type local:ResultUserControl}}}">-->
+            <TabItem Header="Results"
+                     controls:ControlsHelper.HeaderFontSize="18">
+
+                <DataGrid IsReadOnly="True"
+                          AutoGenerateColumns="True"
+                          BorderBrush="{StaticResource HighlightBrush}" BorderThickness="3" Margin="3">
+                    
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell"
+                               BasedOn="{StaticResource {x:Type DataGridCell}}">
+                            <EventSetter Event="PreviewKeyDown"
+                                         Handler="DataGridCell_PreviewKeyDown" />
+                        </Style>
+                    </DataGrid.CellStyle>
+                </DataGrid>
+            </TabItem>
+            <TabItem Header="Details"
+                     controls:ControlsHelper.HeaderFontSize="18">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox Text="Record Count" />
+                        <TextBox Text="{Binding ResultSet.RecordCount}" />
+                    </StackPanel>
+                    <TextBox Text="SQL Command" />
+                    <TextBox Text="{Binding ResultSet.SQLCommand}" />
+                </StackPanel>
+            </TabItem>
+
+        </controls:MetroAnimatedTabControl>
+
+    </Grid>
+</UserControl>

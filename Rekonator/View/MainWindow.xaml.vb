@@ -7,34 +7,13 @@ Partial Class MainWindow
     Private _vm As New MainViewModel
     Private _solutionPath As String = String.Empty
     'Cant do notify prop change on datatables.  
-    Private _left As New DataTable
     Private _leftDetails As New DataTable
-    Private _right As New DataTable
     Private _rightDetails As New DataTable
-    Private _differ As New DataTable
-    Private _match As New DataTable
     Private _isControlPressed As Boolean = False
 
 
 
 #Region "-- Solution Properties --"
-
-    'Public Property ObsSolution As ObservableCollection(Of Solution) 'active solution
-    '    Get
-    '        ObsSolution = _obsSolution
-    '    End Get
-    '    Set(value As ObservableCollection(Of Solution))
-    '        _obsSolution = value
-    '        Reconciliation = _solution.Reconciliations(0)
-    '        Me.DataContext = Me
-    '        Me.dspLeft.DataContext = _solution.Reconciliations(0).LeftReconSource
-    '        Me.dspRight.DataContext = _solution.Reconciliations(0).RightReconSource
-    '        OnPropertyChanged("ObsSolution")
-    '    End Set
-    'End Property
-    'Private _obsSolution As ObservableCollection(Of Solution)
-
-
 
 
 #End Region
@@ -73,6 +52,24 @@ Partial Class MainWindow
                 Application.Message($"{_solutionPath} saved.")
             End If
         End If
+    End Sub
+    Public Sub LoadReconSources(reconciliation As Reconciliation)
+
+        If Not reconciliation.LeftReconSource.IsLoaded Then LoadReconSource(ReconSource.SideName.Left)
+        If Not reconciliation.RightReconSource.IsLoaded Then LoadReconSource(ReconSource.SideName.Right)
+
+        Using sql As New SQL
+            Dim dtTable As DataTable = Nothing
+
+            _vm.LeftSQL = ReconSource.GetSelect(reconciliation.LeftReconSource)
+            dtTable = sql.GetDataTable(_vm.LeftSQL)
+            If dtTable IsNot Nothing Then _vm.LeftSet = dtTable.AsDataView
+
+            _vm.RightSQL = ReconSource.GetSelect(reconciliation.RightReconSource)
+            dtTable = sql.GetDataTable(_vm.RightSQL)
+            If dtTable IsNot Nothing Then _vm.RightSet = dtTable.AsDataView
+
+        End Using
     End Sub
 
     Public Sub LoadReconSource(side As ReconSource.SideName)
@@ -135,11 +132,11 @@ Partial Class MainWindow
             Dim dr As DataRow = TryCast(dgr.Item.Row, DataRow)
             If dr IsNot Nothing Then
                 Using sql As New SQL
-
-                    _left = sql.GetDataTable($"Select * From [dbo].[{_vm.Reconciliation.LeftReconSource.ReconTable}] Where [Txn ID] = '{dr.ItemArray(3)}' AND [GL ACCOUNT] = '{dr.ItemArray(4)}'")
-                    _vm.LeftSet = _left.AsDataView
-                    _right = sql.GetDataTable($"Select * From [dbo].[{_vm.Reconciliation.RightReconSource.ReconTable}] Where [TxnID] = '{dr.ItemArray(5)}' AND [Account] = '{dr.ItemArray(6)}'")
-                    _vm.RightSet = _right.AsDataView
+                    Dim dtTable As DataTable = Nothing
+                    dtTable = sql.GetDataTable($"Select * From [dbo].[{_vm.Reconciliation.LeftReconSource.ReconTable}] Where [Txn ID] = '{dr.ItemArray(3)}' AND [GL ACCOUNT] = '{dr.ItemArray(4)}'")
+                    If dtTable IsNot Nothing Then _vm.LeftSet = dtTable.AsDataView
+                    dtTable = sql.GetDataTable($"Select * From [dbo].[{_vm.Reconciliation.RightReconSource.ReconTable}] Where [TxnID] = '{dr.ItemArray(5)}' AND [Account] = '{dr.ItemArray(6)}'")
+                    If dtTable IsNot Nothing Then _vm.RightSet = dtTable.AsDataView
                 End Using
 
             End If
@@ -155,9 +152,7 @@ Partial Class MainWindow
     Friend Sub ChangeReconciliation(rc As Reconciliation)
         If rc IsNot Nothing Then
             _vm.Reconciliation = rc
-            'Task.Factory.StartNew(Sub() Configure(solutionName)).
-            '                  ContinueWith(Sub() LoadReconSources()).
-            '                  ContinueWith(Sub() Test())
+            Task.Factory.StartNew(Sub() LoadReconSources(rc))
         End If
     End Sub
 #End Region
@@ -172,10 +167,14 @@ Partial Class MainWindow
     Private Sub Rekonate()
         _leftDetails.Reset()
         _rightDetails.Reset()
-        _differ.Reset()
-        _vm.DifferSet = _differ.AsDataView
-        _match.Reset()
-        _vm.MatchSet = _match.AsDataView
+
+        '_vm.DifferResultSet.Add(New ResultSet(ResultSet.ResultSetName.Left))
+        '_vm.ResultSets.Add(New ResultSet(ResultSet.ResultSetName.Right))
+        _vm.DifferResultSet = New ResultSet(ResultSet.ResultSetName.Differ)
+        _vm.MatchResultSet = New ResultSet(ResultSet.ResultSetName.Match)
+
+        _vm.MatchSet = Nothing
+        _vm.DifferSet = Nothing
 
         'If _left.Rows.Count = 0 Or _right.Rows.Count = 0 Then Exit Sub
 
@@ -183,18 +182,25 @@ Partial Class MainWindow
             sql.DropTables({"Left", "Right", "Match", "Differ"})
         End Using
         Using sql As New SQL
+            Dim dtTable As DataTable = Nothing
+            Dim sqlCmd As String = String.Empty
 
-            _match = sql.GetDataTable(Reconciliation.GetMatchSelect(_vm.Reconciliation))
-            If _match.AsDataView Is Nothing Then Exit Sub
-            _vm.MatchSet = _match.AsDataView
-            _differ = sql.GetDataTable(Reconciliation.GetDifferSelect(_vm.Reconciliation))
-            If _differ.AsDataView Is Nothing Then Exit Sub
-            _vm.DifferSet = _match.AsDataView
-            _left = sql.GetDataTable(Reconciliation.GetLeftSelect(_vm.Reconciliation))
-            If _left.AsDataView Is Nothing Then Exit Sub
-            _vm.LeftSet = _left.AsDataView
-            _right = sql.GetDataTable(Reconciliation.GetRightSelect(_vm.Reconciliation))
-            _vm.RightSet = _right.AsDataView
+            _vm.MatchResultSet.SQLCommand = Reconciliation.GetMatchSelect(_vm.Reconciliation)
+            dtTable = sql.GetDataTable(_vm.MatchResultSet.SQLCommand)
+            If dtTable IsNot Nothing Then
+                _vm.MatchResultSet.ResultDataView = dtTable.AsDataView
+                _vm.MatchResultSet.RecordCount = dtTable.Rows.Count
+            End If
+            _vm.DifferResultSet.SQLCommand = Reconciliation.GetDifferSelect(_vm.Reconciliation)
+            dtTable = sql.GetDataTable(_vm.DifferResultSet.SQLCommand)
+            If dtTable IsNot Nothing Then
+                _vm.DifferResultSet.ResultDataView = dtTable.AsDataView
+                _vm.DifferResultSet.RecordCount = dtTable.Rows.Count
+            End If
+            dtTable = sql.GetDataTable(Reconciliation.GetLeftSelect(_vm.Reconciliation))
+            If dtTable IsNot Nothing Then _vm.LeftSet = dtTable.AsDataView
+            dtTable = sql.GetDataTable(Reconciliation.GetRightSelect(_vm.Reconciliation))
+            If dtTable IsNot Nothing Then _vm.RightSet = dtTable.AsDataView
         End Using
 
         'If _reconciliation.LeftReconSource.Aggregations IsNot Nothing Then DoAggregation(_reconciliation.LeftReconSource)
@@ -602,9 +608,11 @@ Partial Class MainWindow
     Public Sub AddMessage(messageText As String, Optional isError As Boolean = False)
         Try
             If Not BottomFlyout.IsOpen Then BottomFlyout.IsOpen = True
+            If isError Then BottomFlyout.IsAutoCloseEnabled = False
             _vm.MessageLog.Add(New MessageEntry With {.MessageText = messageText, .IsError = isError})
             With UserControlMessageLog.ListBoxMessageLog
-                .SelectedIndex = .Items.Count - 1
+
+                If .Items.Count > 0 Then .SelectedIndex = .Items.Count - 1
                 .ScrollIntoView(.SelectedItem)
             End With
         Catch
@@ -641,7 +649,4 @@ Partial Class MainWindow
         LoadSolution()
     End Sub
 
-    Private Sub dgDiffer_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles dgDiffer.SelectionChanged
-
-    End Sub
 End Class

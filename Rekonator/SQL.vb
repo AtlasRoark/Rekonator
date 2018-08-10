@@ -45,9 +45,7 @@ Public Class SQL
             Return dt
 
         Catch ex As Exception
-            Debug.Print(ex.Message)
-            Debug.Print(selectCommand)
-            Application.ErrorMessage($"Error getting dataview for {selectCommand}: {ex.Message}")
+            Application.ErrorMessage($"Error getting dataview: {ex.Message}")
         End Try
         Return Nothing
     End Function

@@ -1,5 +1,6 @@
 ﻿Partial Class DataSourceUserContol
     Inherits UserControl
+    'https://blog.scottlogic.com/2012/02/06/a-simple-pattern-for-creating-re-useable-usercontrols-in-wpf-silverlight.html
 
 #Region "Dependency Properties"
     Public Property DataSources As List(Of DataSource)
@@ -55,7 +56,6 @@
 
         ' This call is required by the designer.
         InitializeComponent()
-        'GridReconSource.DataContext = Me
         ' Add any initialization after the InitializeComponent() call.
     End Sub
     Private Sub CBDataSources_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
@@ -73,18 +73,6 @@
 
         'End If
 
-    End Sub
-
-
-
-
-
-    Private Sub DataSourcePage_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
-        'Dim userControl As UserControl = TryCast(sender, UserControl)
-        'If userControl IsNot Nothing Then
-        '    Dim mainWindow As MainWindow = Utility.FindAncestor(Me, GetType(MahApps.Metro.Controls.MetroWindow))
-
-        'End If
     End Sub
 
     Private Sub ButtonLoad_Click(sender As Object, e As RoutedEventArgs)

@@ -76,16 +76,17 @@
     <Compile Include="Models\Column.vb" />
     <Compile Include="Models\MessageEntry.vb" />
     <Compile Include="Models\Parameter.vb" />
+    <Compile Include="Models\ResultSet.vb" />
     <Compile Include="SQL.vb" />
     <Compile Include="ViewModel\MainViewModel.vb" />
     <Compile Include="Converters\AggToTextConverter.vb" />
     <Compile Include="ViewModel\ViewModelBase.vb" />
-    <Compile Include="View\BoolToCaptionConverter.vb" />
+    <Compile Include="Converters\BoolToCaptionConverter.vb" />
     <Compile Include="View\Client.xaml.vb">
       <DependentUpon>Client.xaml</DependentUpon>
     </Compile>
     <Compile Include="Converters\ComparisionToTextConverter.vb" />
-    <Compile Include="View\DataSourceUserControl.xaml.vb">
+    <Compile Include="View\UserContols\DataSourceUserControl.xaml.vb">
       <DependentUpon>DataSourceUserControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Get\GetSQL.vb" />
@@ -100,10 +101,13 @@
     <Compile Include="Helpers\ColNameComparer.vb" />
     <Compile Include="Helpers\SystemDialog.vb" />
     <Compile Include="Helpers\ValueComparer.vb" />
-    <Compile Include="View\MessageUserControl.xaml.vb">
+    <Compile Include="View\UserContols\MessageUserControl.xaml.vb">
       <DependentUpon>MessageUserControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="View\SolutionUserControl.xaml.vb">
+    <Compile Include="View\UserContols\ResultUserControl.xaml.vb">
+      <DependentUpon>ResultUserControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\UserContols\SolutionUserControl.xaml.vb">
       <DependentUpon>SolutionUserControl.xaml</DependentUpon>
     </Compile>
     <Page Include="Resources\Icons.xaml">
@@ -114,7 +118,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="View\DataSourceUserControl.xaml">
+    <Page Include="View\UserContols\DataSourceUserControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -122,11 +126,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="View\MessageUserControl.xaml">
+    <Page Include="View\UserContols\MessageUserControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="View\SolutionUserControl.xaml">
+    <Page Include="View\UserContols\ResultUserControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\UserContols\SolutionUserControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

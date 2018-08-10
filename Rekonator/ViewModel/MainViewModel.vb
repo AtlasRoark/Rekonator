@@ -41,15 +41,15 @@ Public Class MainViewModel
     End Property
     Private _compareMethods As List(Of CompareMethod)
 
-    Public Property MessageLog As List(Of MessageEntry)
+    Public Property MessageLog As ObservableCollection(Of MessageEntry)
         Get
             MessageLog = _messages
         End Get
-        Set(value As List(Of MessageEntry))
+        Set(value As ObservableCollection(Of MessageEntry))
             OnPropertyChanged("MessageLog")
         End Set
     End Property
-    Private _messages As New List(Of MessageEntry)
+    Private _messages As New ObservableCollection(Of MessageEntry)
 #End Region
 #Region "-- Solution Model Properties --"
     'Surface parent properties here so two way binding works
@@ -74,10 +74,6 @@ Public Class MainViewModel
         End Get
         Set(value As ObservableCollection(Of Reconciliation))
             _reconciliations = value
-            'If _reconciliation IsNot Nothing Then
-            '    LeftReconSource = _reconciliation.LeftReconSource
-            '    RightReconSource = _reconciliation.RightReconSource
-            'End If
             OnPropertyChanged("Reconciliations")
         End Set
     End Property
@@ -91,27 +87,45 @@ Public Class MainViewModel
         Set(value As Reconciliation)
             _reconciliation = value
             If _reconciliation IsNot Nothing Then
-                'LeftReconSource = _reconciliation.LeftReconSource
-                'RightReconSource = _reconciliation.RightReconSource
+                'LoadReconSources(_reconciliation)
             End If
             OnPropertyChanged("Reconciliation")
         End Set
     End Property
     Private _reconciliation As Reconciliation
 
-    'Public Property NewReconciliation As String
+    Public Property DifferResultSet As ResultSet
+        Get
+            DifferResultSet = _differResultSet
+        End Get
+        Set(value As ResultSet)
+            _differResultSet = value
+            OnPropertyChanged("DifferResultSet")
+        End Set
+    End Property
+    Private _differResultSet As ResultSet
+
+    Public Property MatchResultSet As ResultSet
+        Get
+            MatchResultSet = _matchResultSet
+        End Get
+        Set(value As ResultSet)
+            _matchResultSet = value
+            OnPropertyChanged("MatchResultSet")
+        End Set
+    End Property
+    Private _matchResultSet As ResultSet
+
+    'Public Property ResultSets As ObservableCollection(Of ResultSet)
     '    Get
-    '        NewReconciliation = _newReconciliation
+    '        ResultSets = _resultSets
     '    End Get
-    '    Set(value As String)
-    '        _newReconciliation = value
-    '        If _reconciliation Is Nothing Then
-    '        End If
+    '    Set(value As ObservableCollection(Of ResultSet))
+    '        _resultSets = value
+    '        OnPropertyChanged("ResultSets")
     '    End Set
     'End Property
-    'Private _newReconciliation As String
-
-
+    'Private _resultSets As ObservableCollection(Of ResultSet)
 
 #End Region
 #Region "-- Result Set Properties --"
@@ -122,10 +136,21 @@ Public Class MainViewModel
         End Get
         Set(value As DataView)
             _leftSet = value
-            'OnPropertyChanged("LeftSet")
+            OnPropertyChanged("LeftSet")
         End Set
     End Property
     Private _leftSet As New DataView
+
+    Public Property LeftSQL As String
+        Get
+            LeftSQL = _leftSQL
+        End Get
+        Set(value As String)
+            _leftSQL = value
+            OnPropertyChanged("LeftSQL")
+        End Set
+    End Property
+    Private _leftSQL As String
 
     Public Property RightSet As DataView
         Get
@@ -133,32 +158,63 @@ Public Class MainViewModel
         End Get
         Set(value As DataView)
             _rightSet = value
-            'OnPropertyChanged("RightSet")
+            OnPropertyChanged("RightSet")
         End Set
     End Property
     Private _rightSet As New DataView
 
+    Public Property RightSQL As String
+        Get
+            RightSQL = _RightSQL
+        End Get
+        Set(value As String)
+            _RightSQL = value
+            OnPropertyChanged("RightSQL")
+        End Set
+    End Property
+    Private _RightSQL As String
     Public Property DifferSet As DataView
         Get
             DifferSet = _differSet
         End Get
         Set(value As DataView)
             _differSet = value
-            'OnPropertyChanged("DifferSet")
+            OnPropertyChanged("DifferSet")
         End Set
     End Property
     Private _differSet As New DataView
 
+    Public Property DifferSQL As String
+        Get
+            DifferSQL = _DifferSQL
+        End Get
+        Set(value As String)
+            _DifferSQL = value
+            OnPropertyChanged("DifferSQL")
+        End Set
+    End Property
+    Private _DifferSQL As String
     Public Property MatchSet As DataView
         Get
             MatchSet = _matchSet
         End Get
         Set(value As DataView)
             _matchSet = value
-            'OnPropertyChanged("MatchSet")
+            OnPropertyChanged("MatchSet")
         End Set
     End Property
     Private _matchSet As New DataView
+
+    Public Property MatchSQL As String
+        Get
+            MatchSQL = _MatchSQL
+        End Get
+        Set(value As String)
+            _MatchSQL = value
+            OnPropertyChanged("MatchSQL")
+        End Set
+    End Property
+    Private _MatchSQL As String
 #End Region
 
 #Region "-- Notify Property Change --"
@@ -176,24 +232,6 @@ Public Class MainViewModel
     '        Throw New Exception($"Could not find property: {propertyName}")
     '    End If
     'End Sub
-#End Region
-
-#Region "Commands"
-    Public Sub LoadReconSources()
-        'If Not LeftReconSource.IsLoaded Then LoadReconSource(LeftReconSource)
-        'If Not RightReconSource.IsLoaded Then LoadReconSource(RightReconSource)
-
-        Using sql As New SQL
-            'Dim rs As ReconSource = _vmLeft.ReconSource ' LeftReconSource
-            '_left = sql.GetDataTable(ReconSource.GetSelect(rs)) ', _reconciliation.FromDate, _reconciliation.ToDate)
-            'LeftSet = _left.AsDataView
-            'rs = _rightReconSource
-            '_right = sql.GetDataTable(ReconSource.GetSelect(rs)) ', _reconciliation.FromDate, _reconciliation.ToDate)
-            'RightSet = _right.AsDataView
-        End Using
-    End Sub
-
-
 #End Region
 
 End Class

@@ -56,6 +56,13 @@
             </Setter>-->
         </Style>
 
+        <!--<Style x:Key="ReconTabItem"
+               TargetType="{x:Type MetroTabItem}"
+               BasedOn="{StaticResource {x:Type controls:MetroTabItem}}">
+            <Setter Property="controls:ControlsHelper.HeaderFontSize"
+                    Value="18" />
+        </Style>-->
+        
     </Window.Resources>
 
     <!--<Window.DataContext>
@@ -126,14 +133,14 @@
             <controls:Flyout x:Name="TopFlyout"
                              Header="Settings"
                              Position="Top"
-                             Width="600"
+                             Width="650"
                              Height="300">
                 <local:SolutionUserControl />
             </controls:Flyout>
             <controls:Flyout x:Name="BottomFlyout"
                              Header="Messages"
                              Position="Bottom" IsAutoCloseEnabled="True"
-                             Width="600"
+                             Width="650"
                              Height="300">
                 <local:MessageUserControl x:Name="UserControlMessageLog" />
             </controls:Flyout>
@@ -172,24 +179,30 @@
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
-        <!--<TextBlock Text="Left"
-                           Style="{DynamicResource MaterialDesignTitleTextBlock}"
-                           HorizontalAlignment="Center" />-->
-        <DataGrid Grid.Row="1"
-                  Grid.RowSpan="3"
-                  Grid.Column="0"
-                  x:Name="dgLeft"
-                  ItemsSource="{Binding LeftSet}"
-                  Style="{StaticResource ReconGrid}">
-            <DataGrid.CellStyle>
-                <Style TargetType="DataGridCell"
-                       BasedOn="{StaticResource {x:Type DataGridCell}}">
-                    <EventSetter Event="PreviewKeyDown"
-                                 Handler="DataGridCell_PreviewKeyDown" />
-                </Style>
-            </DataGrid.CellStyle>
-        </DataGrid>
 
+        <controls:MetroAnimatedTabControl Grid.Row="1"
+                                  Grid.RowSpan="3"
+                                  Grid.Column="0" TabStripPlacement="Bottom">
+            <TabItem Header="Results" controls:ControlsHelper.HeaderFontSize="18">
+                
+                <DataGrid x:Name="dgLeft"
+                          ItemsSource="{Binding LeftSet}"
+                          Style="{StaticResource ReconGrid}">
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell"
+                               BasedOn="{StaticResource {x:Type DataGridCell}}">
+                            <EventSetter Event="PreviewKeyDown"
+                                         Handler="DataGridCell_PreviewKeyDown" />
+                        </Style>
+                    </DataGrid.CellStyle>
+                </DataGrid>
+            </TabItem>
+            <TabItem Header="Details"
+                     controls:ControlsHelper.HeaderFontSize="18">
+                <TextBlock Text="{Binding LeftSQL}" />
+            </TabItem>
+
+        </controls:MetroAnimatedTabControl>
         <!--ActiveLayoutIndex="{Binding ElementName=layoutCombo, Path=SelectedIndex}"
                           ActiveLayoutChanged="OnSwitchPanelLayoutChanged"-->
         <StackPanel Grid.Row="0"
@@ -226,8 +239,6 @@
             </DataGrid.CellStyle>
         </DataGrid>
 
-
-
         <StackPanel Grid.Row="0"
                     Grid.Column="1">
             <StackPanel Orientation="Horizontal"
@@ -244,7 +255,10 @@
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
-        <DataGrid x:Name="dgDiffer"
+        <local:ResultUserControl Grid.Row="1"
+                                 Grid.Column="1"
+                                 ResultSet="{Binding DifferResultSet}" />
+        <!--<DataGrid x:Name="dgDiffer"
                   Grid.Row="1"
                   Grid.Column="1"
                   ItemsSource="{Binding DifferSet}"
@@ -266,7 +280,7 @@
                                  Handler="DataGridCell_PreviewKeyDown" />
                 </Style>
             </DataGrid.CellStyle>
-        </DataGrid >
+        </DataGrid >-->
 
 
         <StackPanel Grid.Row="2"
@@ -283,7 +297,11 @@
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
-        <DataGrid x:Name="dgMatch"
+        <local:ResultUserControl  Grid.Row="3"
+                                  Grid.Column="1"
+                                  ResultSet="{Binding MatchResultSet}" />
+
+        <!--<DataGrid x:Name="dgMatch"
                   Grid.Row="3"
                   Grid.Column="1"
                   ItemsSource="{Binding MatchSet}">
@@ -294,6 +312,6 @@
                                  Handler="DataGridCell_PreviewKeyDown" />
                 </Style>
             </DataGrid.CellStyle>
-        </DataGrid>
+        </DataGrid>-->
     </Grid>
 </controls:MetroWindow>

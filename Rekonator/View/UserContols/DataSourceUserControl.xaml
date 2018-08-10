@@ -7,7 +7,7 @@
              Background="{StaticResource MaterialDesignPaper}"
              mc:Ignorable="d"
              d:DesignHeight="450"
-             d:DesignWidth="800" x:Name="ucontrol">
+             d:DesignWidth="800" x:Name="UserControlDataSource">
 
     <UserControl.Resources>
         <local:AggToTextConverter x:Key="AggToTextConverter" />
@@ -32,7 +32,8 @@
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
         <Grid x:Name="GridReconSource" ScrollViewer.CanContentScroll="True"
             HorizontalAlignment="Center"
-          Margin="15" DataContext="{Binding ElementName=ucontrol}">
+              Margin="15"
+              DataContext="{Binding ElementName=UserControlDataSource}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*"/>
                 <ColumnDefinition Width="5*" />
@@ -45,6 +46,8 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto"
+                               MinHeight="40" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -128,27 +131,36 @@
 
             <TextBlock Grid.Row="6"
                        Grid.Column="0"
+                       VerticalAlignment="Bottom"
+                       Margin="0,0,10,0"
+                       Text="Column Prefix" />
+            <TextBox Grid.Row="6"
+                     Grid.Column="1"
+                     Text="{Binding ReconSource.ColumnPrefix}" />
+
+            <TextBlock Grid.Row="7"
+                       Grid.Column="0"
                        Grid.ColumnSpan="2"
                        Text="Apply Where Clause"
                        Margin="0,15,0,0" />
 
-            <TextBox Grid.Row="7"
+            <TextBox Grid.Row="8"
                      Grid.Column="0"
                      Grid.ColumnSpan="2" TextWrapping="Wrap"
                      Text="{Binding ReconSource.WhereClause}" />
 
-            <TextBlock Grid.Row="8"
+            <TextBlock Grid.Row="9"
                        Grid.Column="0"
                        Text="Aggregations"
                        Margin="0,15,0,0" />
 
-            <TextBox Grid.Row="9"
+            <TextBox Grid.Row="10"
                      Grid.Column="0"
                      Grid.ColumnSpan="2"
                      TextWrapping="Wrap"
                      Text="{Binding ReconSource.Aggregations, Converter={StaticResource AggToTextConverter}}" />
 
-            <Button Grid.Row="10"
+            <Button Grid.Row="11"
                     Grid.Column="0"
                     Margin="0,15,0,0"
                     Name="ButtonLoad"

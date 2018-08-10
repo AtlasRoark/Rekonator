@@ -40,7 +40,7 @@ Public Class GetExcel
                             fieldList.Add(excelReader.GetValue(idx))
                         Next
                     Else
-                        fieldList = reconSource.Columns.Select(Function(s) s.ColumnName).ToList
+                        fieldList = reconSource.Columns.Select(Function(s) $"{reconSource.ColumnPrefix}{s.ColumnName}").ToList
                         typeList = reconSource.Columns.Select(Function(s) s.ColumnType).ToList
                     End If
                     fieldCount = fieldList.Count

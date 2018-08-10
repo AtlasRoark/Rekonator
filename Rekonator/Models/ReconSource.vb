@@ -8,6 +8,7 @@ Public Class ReconSource
     Property Parameters As New List(Of Parameter)
     Property LoadedSet As DataTable
     Property WhereClause As String = String.Empty
+    Property ColumnPrefix As String
     Property Columns As New List(Of Column)
     Property Aggregations As New List(Of Aggregate)
 
