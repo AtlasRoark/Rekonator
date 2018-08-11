@@ -263,15 +263,15 @@ Public Class Reconciliation
     End Function
     Public Shared Function GetLeftSelect(recon As Reconciliation) As String
         Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing)
+        Dim prefix As String = recon.LeftReconSource.ColumnPrefix
 
         _sb.Clear()
-        '_sb.AppendLine(MakeDropTable("Left"))
 
         If isAggA Then
             _sb.AppendLine("SELECT")
-            _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", recon.LeftReconSource.ColumnPrefix))
+            _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", prefix))
             For Each aop As AggregateOperation In recon.LeftReconSource.Aggregations(0).AggregateOperations
-                _sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}(a.[{aop.SourceColumn}])")
+                _sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}(a.[{prefix}{aop.SourceColumn}])")
             Next
             _sb.AppendLine("INTO [Left]")
             _sb.AppendLine($"FROM [dbo].[{recon.LeftReconSource.ReconTable}] a")
@@ -280,11 +280,11 @@ Public Class Reconciliation
                 _sb.AppendLine($"{recon.LeftReconSource.WhereClause.Replace("x!.", "a.")}")
                 _sb.AppendLine("AND")
             End If
-            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Match", "a", recon.LeftReconSource.ColumnPrefix))
+            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Match", "a", prefix))
             _sb.AppendLine("AND")
-            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Differ", "a", recon.LeftReconSource.ColumnPrefix))
+            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Differ", "a", prefix))
             _sb.AppendLine("GROUP BY ")
-            _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", recon.LeftReconSource.ColumnPrefix))
+            _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", prefix))
             _sb.AppendLine()
             _sb.AppendLine("SELECT * FROM [Left] a")
         Else
@@ -305,14 +305,16 @@ Public Class Reconciliation
     End Function
     Public Shared Function GetRightSelect(recon As Reconciliation) As String
         Dim isAggB As Boolean = (recon.RightReconSource.Aggregations IsNot Nothing)
+        Dim prefix As String = recon.RightReconSource.ColumnPrefix
+
         _sb.Clear()
         '_sb.AppendLine(MakeDropTable("Right"))
 
         If isAggB Then
             _sb.AppendLine("SELECT")
-            _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b", recon.RightReconSource.ColumnPrefix))
+            _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b", prefix))
             For Each aop As AggregateOperation In recon.RightReconSource.Aggregations(0).AggregateOperations
-                _sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}(b.[{aop.SourceColumn}])")
+                _sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}(b.[{prefix}{aop.SourceColumn}])")
             Next
             _sb.AppendLine("INTO [Right]")
             _sb.AppendLine($"FROM [dbo].[{recon.RightReconSource.ReconTable}] b")
@@ -321,11 +323,11 @@ Public Class Reconciliation
                 _sb.AppendLine($"{recon.RightReconSource.WhereClause.Replace("x!.", "b.")}")
                 _sb.AppendLine("AND")
             End If
-            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Match", "b", recon.RightReconSource.ColumnPrefix))
+            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Match", "b", prefix))
             _sb.AppendLine("AND")
-            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Differ", "b", recon.RightReconSource.ColumnPrefix))
+            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Differ", "b", prefix))
             _sb.AppendLine("GROUP BY ")
-            _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b", recon.RightReconSource.ColumnPrefix))
+            _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b", prefix))
             _sb.AppendLine()
             _sb.AppendLine("SELECT * FROM [Right] b")
         Else

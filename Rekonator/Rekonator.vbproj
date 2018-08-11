@@ -69,6 +69,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Converters\BooleanToVisibilityConverter.vb" />
     <Compile Include="Get\GetExcel.vb" />
     <Compile Include="Get\GetQBD.vb" />
     <Compile Include="Helpers\ExtensionMethods.vb" />
@@ -81,7 +82,7 @@
     <Compile Include="ViewModel\MainViewModel.vb" />
     <Compile Include="Converters\AggToTextConverter.vb" />
     <Compile Include="ViewModel\ViewModelBase.vb" />
-    <Compile Include="Converters\BoolToCaptionConverter.vb" />
+    <Compile Include="Converters\BooleanToCaptionConverter.vb" />
     <Compile Include="View\Client.xaml.vb">
       <DependentUpon>Client.xaml</DependentUpon>
     </Compile>
@@ -195,6 +196,7 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.vb</LastGenOutput>
     </None>
+    <Resource Include="Resources\SourceSansPro-Regular.otf" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

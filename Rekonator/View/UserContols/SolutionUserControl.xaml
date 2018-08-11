@@ -71,7 +71,9 @@
                    VerticalAlignment="Center" />
         <TextBox Grid.Row="4"
                  Grid.Column="2"
+                 FontFamily="{StaticResource SourceSans}" FontSize="14"
                  TextWrapping="Wrap"
+                 TextAlignment="Left"
                  Text="{Binding Reconciliation.CompletenessComparisions, Converter={StaticResource ComparisionToTextConverter}}" />
         
         <TextBlock Grid.Row="5"
@@ -80,7 +82,10 @@
                    VerticalAlignment="Center" />
         <TextBox Grid.Row="5"
                  Grid.Column="2"
+                 FontFamily="{StaticResource SourceSans}"
+                 FontSize="14"
                  TextWrapping="Wrap"
+                 TextAlignment="Left"
                  Text="{Binding Reconciliation.MatchingComparisions, Converter={StaticResource ComparisionToTextConverter}}" />
 
 

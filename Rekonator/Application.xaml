@@ -28,6 +28,8 @@
 
             </ResourceDictionary.MergedDictionaries>
 
+            <FontFamily x:Key="SourceSans">pack://application:,,,/Resources/#Source Sans Pro</FontFamily>
+
             <!-- MahApps Brushes -->
             <SolidColorBrush x:Key="HighlightBrush"
                              Color="{DynamicResource Primary700}" />

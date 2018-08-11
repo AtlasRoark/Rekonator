@@ -1,6 +1,6 @@
 ﻿Imports System.Globalization
 
-Public Class BoolToCaptionConverter
+Public Class BooleanToCaptionConverter
     Implements IValueConverter
 
     Private Function Convert(value As Object, targetType As Type, parameter As Object, culture As CultureInfo) As Object Implements IValueConverter.Convert

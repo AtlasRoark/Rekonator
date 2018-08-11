@@ -51,6 +51,7 @@ Public Class MainViewModel
     End Property
     Private _messages As New ObservableCollection(Of MessageEntry)
 #End Region
+
 #Region "-- Solution Model Properties --"
     'Surface parent properties here so two way binding works
     Public Property Solution As Solution 'active solution
@@ -93,6 +94,31 @@ Public Class MainViewModel
         End Set
     End Property
     Private _reconciliation As Reconciliation
+#End Region
+
+#Region "-- Result Set Properties --"
+
+    Public Property LeftResultSet As ResultSet
+        Get
+            LeftResultSet = _LeftResultSet
+        End Get
+        Set(value As ResultSet)
+            _LeftResultSet = value
+            OnPropertyChanged("LeftResultSet")
+        End Set
+    End Property
+    Private _leftResultSet As ResultSet
+
+    Public Property RightResultSet As ResultSet
+        Get
+            RightResultSet = _rightResultSet
+        End Get
+        Set(value As ResultSet)
+            _rightResultSet = value
+            OnPropertyChanged("RightResultSet")
+        End Set
+    End Property
+    Private _rightResultSet As ResultSet
 
     Public Property DifferResultSet As ResultSet
         Get
@@ -114,6 +140,12 @@ Public Class MainViewModel
             OnPropertyChanged("MatchResultSet")
         End Set
     End Property
+
+    Public Sub ClearMessageLog()
+        _messages.Clear()
+        MessageLog = _messages
+    End Sub
+
     Private _matchResultSet As ResultSet
 
     'Public Property ResultSets As ObservableCollection(Of ResultSet)
@@ -127,94 +159,6 @@ Public Class MainViewModel
     'End Property
     'Private _resultSets As ObservableCollection(Of ResultSet)
 
-#End Region
-#Region "-- Result Set Properties --"
-
-    Public Property LeftSet As DataView
-        Get
-            LeftSet = _leftSet
-        End Get
-        Set(value As DataView)
-            _leftSet = value
-            OnPropertyChanged("LeftSet")
-        End Set
-    End Property
-    Private _leftSet As New DataView
-
-    Public Property LeftSQL As String
-        Get
-            LeftSQL = _leftSQL
-        End Get
-        Set(value As String)
-            _leftSQL = value
-            OnPropertyChanged("LeftSQL")
-        End Set
-    End Property
-    Private _leftSQL As String
-
-    Public Property RightSet As DataView
-        Get
-            RightSet = _rightSet
-        End Get
-        Set(value As DataView)
-            _rightSet = value
-            OnPropertyChanged("RightSet")
-        End Set
-    End Property
-    Private _rightSet As New DataView
-
-    Public Property RightSQL As String
-        Get
-            RightSQL = _RightSQL
-        End Get
-        Set(value As String)
-            _RightSQL = value
-            OnPropertyChanged("RightSQL")
-        End Set
-    End Property
-    Private _RightSQL As String
-    Public Property DifferSet As DataView
-        Get
-            DifferSet = _differSet
-        End Get
-        Set(value As DataView)
-            _differSet = value
-            OnPropertyChanged("DifferSet")
-        End Set
-    End Property
-    Private _differSet As New DataView
-
-    Public Property DifferSQL As String
-        Get
-            DifferSQL = _DifferSQL
-        End Get
-        Set(value As String)
-            _DifferSQL = value
-            OnPropertyChanged("DifferSQL")
-        End Set
-    End Property
-    Private _DifferSQL As String
-    Public Property MatchSet As DataView
-        Get
-            MatchSet = _matchSet
-        End Get
-        Set(value As DataView)
-            _matchSet = value
-            OnPropertyChanged("MatchSet")
-        End Set
-    End Property
-    Private _matchSet As New DataView
-
-    Public Property MatchSQL As String
-        Get
-            MatchSQL = _MatchSQL
-        End Get
-        Set(value As String)
-            _MatchSQL = value
-            OnPropertyChanged("MatchSQL")
-        End Set
-    End Property
-    Private _MatchSQL As String
 #End Region
 
 #Region "-- Notify Property Change --"

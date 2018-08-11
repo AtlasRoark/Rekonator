@@ -24,7 +24,7 @@
             </Setter>
         </Style>
         <SolidColorBrush x:Key="Item.MouseOver.Background"
-                         Color="{DynamicResource PinkAccent400}" />
+                         Color="{DynamicResource Primary300}" />
         <SolidColorBrush x:Key="Item.MouseOver.Border"
                          Color="#a826A0Da" />
         <SolidColorBrush x:Key="Item.SelectedInactive.Background"
@@ -32,7 +32,7 @@
         <SolidColorBrush x:Key="Item.SelectedInactive.Border"
                          Color="#FFDADADA" />
         <SolidColorBrush x:Key="Item.SelectedActive.Background"
-                         Color="{DynamicResource PinkAccent200}" />
+                         Color="{DynamicResource Primary200}" />
         <SolidColorBrush x:Key="Item.SelectedActive.Border"
                          Color="#FF26A0DA" />
         <Style x:Key="RekonListBoxItemStyle"

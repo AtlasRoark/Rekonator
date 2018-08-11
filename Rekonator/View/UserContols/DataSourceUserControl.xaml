@@ -11,7 +11,7 @@
 
     <UserControl.Resources>
         <local:AggToTextConverter x:Key="AggToTextConverter" />
-        <local:BoolToCaptionConverter x:Key="BoolToCaptionConverter" />
+        <local:BooleanToCaptionConverter x:Key="BooleanToCaptionConverter" />
         <Style TargetType="{x:Type DataGrid}">
             <Setter Property="ColumnHeaderStyle"
                     Value="{DynamicResource DGCHeaderStyle}" />
@@ -146,7 +146,11 @@
 
             <TextBox Grid.Row="8"
                      Grid.Column="0"
-                     Grid.ColumnSpan="2" TextWrapping="Wrap"
+                     Grid.ColumnSpan="2"
+                     TextWrapping="Wrap"
+                     TextAlignment="Left"
+                     FontFamily="{StaticResource SourceSans}"
+                     FontSize="14"
                      Text="{Binding ReconSource.WhereClause}" />
 
             <TextBlock Grid.Row="9"
@@ -156,8 +160,10 @@
 
             <TextBox Grid.Row="10"
                      Grid.Column="0"
+                     FontFamily="{StaticResource SourceSans}"
+                     FontSize="14"
                      Grid.ColumnSpan="2"
-                     TextWrapping="Wrap"
+                     TextWrapping="Wrap" TextAlignment="Left"
                      Text="{Binding ReconSource.Aggregations, Converter={StaticResource AggToTextConverter}}" />
 
             <Button Grid.Row="11"
@@ -165,7 +171,7 @@
                     Margin="0,15,0,0"
                     Name="ButtonLoad"
                     Click="ButtonLoad_Click"
-                    Content="{Binding ReconSource.IsLoaded, Converter={StaticResource BoolToCaptionConverter}}" />
+                    Content="{Binding ReconSource.IsLoaded, Converter={StaticResource BooleanToCaptionConverter}}" />
 
         </Grid>
     </ScrollViewer>

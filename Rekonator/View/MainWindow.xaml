@@ -22,9 +22,7 @@
                       WindowStyle="ThreeDBorderWindow">
     <!--Background="{StaticResource MaterialDesignPaper}"-->
 
-    <Window.Resources>
-        <local:ValueToBrushConverter x:Key="ValueToBrushConverter" />
-
+    <!--<Window.Resources>
         <Style x:Key="ReconGrid"
                TargetType="{x:Type DataGrid}"
                BasedOn="{StaticResource {x:Type DataGrid}}">
@@ -32,42 +30,17 @@
                     Value="True" />
             <Setter Property="AutoGenerateColumns"
                     Value="True" />
-            <!--<Setter Property="AlternatingRowBackground"
-                    Value="LightBlue" />-->
             <Setter Property="BorderBrush"
                     Value="{StaticResource HighlightBrush}" />
             <Setter Property="BorderThickness"
                     Value="3" />
             <Setter Property="Margin"
                     Value="3" />
-            <!--<Setter Property="HorizontalScrollBarVisibility"
-                    Value="Auto" />
-            <Setter Property="VerticalScrollBarVisibility"
-                    Value="Auto" />-->
-            <!--<Setter Property="VerticalContentAlignment"
-                    Value="Center" />-->
-            <!--<Setter Property="RowStyle">
-                <Setter.Value>
-                    <Style  TargetType="{x:Type DataGridRow}">
-                        <Setter Property ="Height" 
-                                Value="32" />
-                    </Style>
-                </Setter.Value>
-            </Setter>-->
         </Style>
 
-        <!--<Style x:Key="ReconTabItem"
-               TargetType="{x:Type MetroTabItem}"
-               BasedOn="{StaticResource {x:Type controls:MetroTabItem}}">
-            <Setter Property="controls:ControlsHelper.HeaderFontSize"
-                    Value="18" />
-        </Style>-->
         
-    </Window.Resources>
+    </Window.Resources>-->
 
-    <!--<Window.DataContext>
-        <local:MainViewModel />
-    </Window.DataContext>-->
     <controls:MetroWindow.LeftWindowCommands>
         <controls:WindowCommands>
             <TextBlock Text="Rekonator"
@@ -179,32 +152,11 @@
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
+        <local:ResultUserControl Grid.Row="1"
+                                 Grid.RowSpan="3"
+                                 Grid.Column="0"
+                                 ResultSet="{Binding LeftResultSet}"  HasLoaded="True"/>
 
-        <controls:MetroAnimatedTabControl Grid.Row="1"
-                                  Grid.RowSpan="3"
-                                  Grid.Column="0" TabStripPlacement="Bottom">
-            <TabItem Header="Results" controls:ControlsHelper.HeaderFontSize="18">
-                
-                <DataGrid x:Name="dgLeft"
-                          ItemsSource="{Binding LeftSet}"
-                          Style="{StaticResource ReconGrid}">
-                    <DataGrid.CellStyle>
-                        <Style TargetType="DataGridCell"
-                               BasedOn="{StaticResource {x:Type DataGridCell}}">
-                            <EventSetter Event="PreviewKeyDown"
-                                         Handler="DataGridCell_PreviewKeyDown" />
-                        </Style>
-                    </DataGrid.CellStyle>
-                </DataGrid>
-            </TabItem>
-            <TabItem Header="Details"
-                     controls:ControlsHelper.HeaderFontSize="18">
-                <TextBlock Text="{Binding LeftSQL}" />
-            </TabItem>
-
-        </controls:MetroAnimatedTabControl>
-        <!--ActiveLayoutIndex="{Binding ElementName=layoutCombo, Path=SelectedIndex}"
-                          ActiveLayoutChanged="OnSwitchPanelLayoutChanged"-->
         <StackPanel Grid.Row="0"
                     Grid.Column="2">
             <StackPanel Orientation="Horizontal"
@@ -224,21 +176,11 @@
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
-        <DataGrid x:Name="dgRight"
-                  Grid.Row="1"
-                  Grid.RowSpan="3"
-                  Grid.Column="2"
-                  ItemsSource="{Binding RightSet}"
-                  Style="{StaticResource ReconGrid}">
-            <DataGrid.CellStyle>
-                <Style TargetType="DataGridCell"
-                       BasedOn="{StaticResource {x:Type DataGridCell}}">
-                    <EventSetter Event="PreviewKeyDown"
-                                 Handler="DataGridCell_PreviewKeyDown" />
-                </Style>
-            </DataGrid.CellStyle>
-        </DataGrid>
-
+        <local:ResultUserControl Grid.Row="1"
+                                 Grid.RowSpan="3"
+                                 Grid.Column="2"
+                                 ResultSet="{Binding RightResultSet}" HasLoaded="True" />
+ 
         <StackPanel Grid.Row="0"
                     Grid.Column="1">
             <StackPanel Orientation="Horizontal"
