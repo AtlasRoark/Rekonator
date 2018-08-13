@@ -233,7 +233,12 @@ Public Class Reconciliation
             sb.AppendLine("SELECT")
             sb.AppendLine(MakeGroupByColumns(agg.GroupByColumns, aorb, prefix))
             For Each aop As AggregateOperation In agg.AggregateOperations
-                sb.AppendLine($",[{prefix}{aop.AggregateColumn}] = {aop.Operation.ToString}({aorb}.[{prefix}{aop.SourceColumn}])")
+                If aop.Operation = AggregateOperation.AggregateFunction.First Or aop.Operation = AggregateOperation.AggregateFunction.Last Then
+                    sb.AppendLine($",[{prefix}{aop.AggregateColumn}] = {aop.Operation.ToString}({aorb}.[{prefix}{aop.SourceColumn}])")
+                Else
+                    sb.AppendLine($",[{prefix}{aop.AggregateColumn}] = {aop.Operation.ToString}(ISNULL({aorb}.[{prefix}{aop.SourceColumn}], 0))")
+
+                End If
             Next
             sb.AppendLine($"FROM [dbo].[{reconSource.ReconTable}] {aorb}")
             If Not String.IsNullOrWhiteSpace(reconSource.WhereClause) Then

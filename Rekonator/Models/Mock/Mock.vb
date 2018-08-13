@@ -38,7 +38,7 @@ Public Class Mock
                     sqlParams.AddParameter("schema", "lahydrojet1")
                     'sqlParams.AddParameter("commandtext", "SELECT * FROM foo")
                     sqlParams.AddParameter("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_paymenttransdetail.sql")
-                    sqlParams.AddParameter("create", "CREATE TABLE lah_sql_trans ( [GL Type] nvarchar(255), [GL Number] nvarchar(4000), [GL Account] nvarchar(255), [Reference] nvarchar(50), [Date] datetime2(7), [Amount] decimal(9,2), [TXN ID] nvarchar(4000), [Id] bigint, [Business Unit] nvarchar(255) )") 'Right click in SSMS result, change table name
+                    sqlParams.AddParameter("Create", "CREATE TABLE lah_sql_trans ( [GL Type] nvarchar(255), [GL Number] nvarchar(4000), [GL Account] nvarchar(255), [Reference] nvarchar(50), [Date] datetime2(7), [Amount] decimal(9,2), [TXN ID] nvarchar(4000), [Id] bigint, [Business Unit] nvarchar(255) )") 'Right click in SSMS result, change table name
                     leftRS = New ReconSource With
                     {.ReconDataSource = sqlDS,
                     .ReconTable = "lah_sql_trans",
@@ -84,7 +84,7 @@ Public Class Mock
                     sqlParams.AddParameter("schema", "lahydrojet1")
                     'sqlParams.AddParameter("commandtext", "SELECT * FROM foo")
                     sqlParams.AddParameter("commandpath", "C:\Users\Peter Grillo\Documents\SQL Server Management Studio\lah_sql_accountdetail.sql")
-                    sqlParams.AddParameter("create", "CREATE TABLE lah_sql_accountdetail ( [GL Type] nvarchar(255), [GL Number] nvarchar(4000), [GL Account] nvarchar(255), [Reference] nvarchar(50), [Date] datetime2(7), [Amount] decimal(9,2), [TXN ID] nvarchar(4000), [Id] bigint, [Business Unit] nvarchar(255) )") 'Right click in SSMS result, change table name
+                    sqlParams.AddParameter("Create", "CREATE TABLE lah_sql_accountdetail ( [GL Type] nvarchar(255), [GL Number] nvarchar(4000), [GL Account] nvarchar(255), [Reference] nvarchar(50), [Date] datetime2(7), [Amount] decimal(9,2), [TXN ID] nvarchar(4000), [Id] bigint, [Business Unit] nvarchar(255) )") 'Right click in SSMS result, change table name
                     leftRS = New ReconSource With
                     {.ReconDataSource = sqlDS,
                     .ReconTable = "lah_sql_accountdetail",

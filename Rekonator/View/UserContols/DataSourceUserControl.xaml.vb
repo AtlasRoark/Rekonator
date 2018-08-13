@@ -83,5 +83,50 @@
     Private Sub ButtonSeeCreateCommand_Click(sender As Object, e As RoutedEventArgs)
 
     End Sub
+
+    Private Sub DataGridParameters_PreviewKeyDown(sender As Object, e As KeyEventArgs)
+        If (e.Key = Key.Enter) Or
+           (e.Key = Key.V AndAlso (Keyboard.Modifiers And ModifierKeys.Control) = ModifierKeys.Control) Then
+
+            Dim datagrid As DataGrid = TryCast(sender, DataGrid)
+            If datagrid IsNot Nothing Then
+                Dim textbox As TextBox = TryCast(e.OriginalSource, TextBox)
+                If textbox IsNot Nothing Then
+                    If e.Key = Key.E Then
+                        textbox.Text = textbox.Text + vbCrLf
+                    Else
+                        Dim clipBoardData As String = Clipboard.GetData(DataFormats.UnicodeText)
+                        If textbox.SelectedText Is Nothing Then
+                            textbox.Text.Insert(textbox.CaretIndex, clipBoardData)
+                        Else
+                            textbox.Text = textbox.Text.Replace(textbox.SelectedText, clipBoardData)
+
+                        End If
+                    End If
+                    e.Handled = True
+                    End If
+                End If
+        End If
+    End Sub
+
+    Private Sub CanPaste(ByVal sender As Object, ByVal e As CanExecuteRoutedEventArgs)
+        e.CanExecute = (Clipboard.GetData(DataFormats.UnicodeText) IsNot Nothing)
+        e.Handled = True
+    End Sub
+
+    Private Sub Paste(ByVal sender As Object, ByVal e As ExecutedRoutedEventArgs)
+        'Pasting in multiline text just adds the first line.  Fix with custom paste.
+        Dim clipBoardData As String = Clipboard.GetData(DataFormats.UnicodeText)
+        If Not String.IsNullOrWhiteSpace(clipBoardData) Then
+            Dim datagrid As DataGrid = TryCast(sender, DataGrid)
+            If datagrid IsNot Nothing Then
+                Dim textbox As TextBox = TryCast(e.OriginalSource, TextBox)
+                If textbox IsNot Nothing Then
+
+                    e.Handled = True
+                End If
+            End If
+        End If
+    End Sub
 End Class
 

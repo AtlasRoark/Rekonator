@@ -85,10 +85,10 @@ Public Class SQL
             _sb.AppendLine(");")
 
             Dim createCommand As String = _sb.ToString
-            If reconSource.Parameters.IsExist("create") Then
-                reconSource.Parameters.UpdateParameter("create", createCommand)
+            If reconSource.Parameters.IsExist("Create") Then
+                reconSource.Parameters.UpdateParameter("Create", createCommand)
             Else
-                reconSource.Parameters.AddParameter("create", createCommand)
+                reconSource.Parameters.AddParameter("Create", createCommand)
             End If
             Dim command As New SqlCommand(createCommand, _connection)
             command.ExecuteNonQuery()

@@ -45,8 +45,6 @@
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell"
                                BasedOn="{StaticResource {x:Type DataGridCell}}">
-                            <Setter Property="Background"
-                                    Value="{Binding RelativeSource={RelativeSource Self}, Path=Content.Text, Converter={StaticResource ValueToBrushConverter}}" />
                             <EventSetter Event="PreviewKeyDown"
                                          Handler="DataGridCell_PreviewKeyDown" />
                         </Style>
@@ -68,8 +66,10 @@
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell"
                                BasedOn="{StaticResource {x:Type DataGridCell}}">
+                            <Setter Property="Foreground"
+                                    Value="{Binding RelativeSource={RelativeSource Self}, Path=Content.Text, Converter={StaticResource ValueToBrushConverter}, ConverterParameter=F}" />
                             <Setter Property="Background"
-                                    Value="{Binding RelativeSource={RelativeSource Self}, Path=Content.Text, Converter={StaticResource ValueToBrushConverter}}" />
+                                    Value="{Binding RelativeSource={RelativeSource Self}, Path=Content.Text, Converter={StaticResource ValueToBrushConverter}, ConverterParameter=B}" />
                             <EventSetter Event="PreviewKeyDown"
                                          Handler="DataGridCell_PreviewKeyDown" />
                         </Style>
@@ -79,10 +79,10 @@
 
             <TabItem Header="Details"
                      controls:ControlsHelper.HeaderFontSize="18">
-                <ScrollViewer>
                     <Border BorderBrush="{StaticResource HighlightBrush}"
                             BorderThickness="3"
                             Margin="3">
+                    <ScrollViewer>
                         <StackPanel Margin="10">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox Text="Record Count" />
@@ -99,8 +99,8 @@
                                      FontFamily="{StaticResource SourceSans}"
                                      FontSize="14" />
                         </StackPanel>
-                    </Border>
-                </ScrollViewer>
+                    </ScrollViewer>
+                </Border>
             </TabItem>
 
         </controls:MetroAnimatedTabControl>

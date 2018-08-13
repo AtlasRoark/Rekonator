@@ -8,8 +8,11 @@ Public Class ValueToBrushConverter
         cell = TryCast(value, String)
         If IsNothing(cell) Then Exit Function
         If cell.Contains("<>") Then
-            'Return Brushes.LightGreen
-            Return Application.Current.MainWindow.FindResource("RekonatorErrorBrush")
+            If parameter = "F" Then
+                Return Brushes.White
+            Else
+                Return Application.Current.MainWindow.FindResource("RekonatorErrorBrush")
+            End If
         End If
         Return DependencyProperty.UnsetValue
     End Function

@@ -127,7 +127,7 @@
                       Grid.ColumnSpan="2"
                       RowHeaderWidth="0"
                       ItemsSource="{Binding ReconSource.Parameters}"
-                      AutoGenerateColumns="False"
+                      AutoGenerateColumns="False" PreviewKeyDown="DataGridParameters_PreviewKeyDown"
                       BorderBrush="{DynamicResource AccentColorBrush4}"
                       BorderThickness="1">
                 <DataGrid.Columns>
@@ -136,6 +136,21 @@
                     <DataGridTextColumn Header="Value"
                                         Binding="{Binding ParameterValue}" />
                 </DataGrid.Columns>
+                <DataGrid.CommandBindings>
+                    <CommandBinding Command="{x:Static ApplicationCommands.Paste}"
+                                    CanExecute="CanPaste"
+                                    Executed="Paste" />
+                </DataGrid.CommandBindings>
+                <!--<DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="{x:Static ApplicationCommands.Copy}"
+                                  Header="Copy" />
+                        <MenuItem Command="{x:Static ApplicationCommands.Paste}"
+                                  Header="Paste" />
+                        <MenuItem Command="{x:Static ApplicationCommands.New}"
+                                  Header="New row" />
+                    </ContextMenu>
+                </DataGrid.ContextMenu>-->
             </DataGrid>
 
             <TextBlock Grid.Row="4"

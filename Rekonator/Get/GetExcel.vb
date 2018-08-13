@@ -7,14 +7,19 @@ Imports System.Text
 Public Class GetExcel
     Implements IDisposable
 
+    Dim fillDownFields As String()
+
     Public Function Load(reconSource As ReconSource) As Boolean
         Dim reconTable As String = reconSource.ReconTable
         Dim filePath As String = reconSource.Parameters.GetParameter("FilePath")
         If String.IsNullOrWhiteSpace(filePath) Then filePath = reconSource.Parameters.GetParameter("Workbook")
         Dim worksheetName As String = reconSource.Parameters.GetParameter("Worksheet")
+        Dim fillDownParam As String = reconSource.Parameters.GetParameter("FillDown")
+        Dim testField As String = reconSource.Parameters.GetParameter("TestField")
         Application.Message($"Loading Table {reconTable} from Excel Worksheet {worksheetName}")
-        Dim testField As Integer = 2
-        Dim fillDown As Integer() = {0, 1}
+
+        Dim testFields As String() = testField.Split(",")
+        fillDownFields = fillDownParam.Split(",")
         Dim rowCount As Integer = 0
         Try
             Using fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite) 'FileShare is ReadWrite even though FileAccess is Read Only.  This allows file to be open if it open in another process e.g. Excel
@@ -57,7 +62,6 @@ Public Class GetExcel
                         End If
                         rowList.Add(excelReader.GetValue(idx))
                     Next
-
                     Using sql As New SQL
                         sql.DropTable(reconTable)
                     End Using
@@ -69,7 +73,7 @@ Public Class GetExcel
                         End If
 
                         Do
-                            If Not String.IsNullOrWhiteSpace(rowList(testField)) Then
+                            If PassTests(rowList, testFields) Then
 
                                 If sql.InsertRow(rowList) Then
                                     rowCount += 1
@@ -87,9 +91,13 @@ Public Class GetExcel
                             For idx = 0 To fieldCount - 1
                                 Dim value As Object = excelReader.GetValue(idx)
                                 If String.IsNullOrWhiteSpace(value) Then
-                                    If fillDown.Contains(idx) Then
-                                        value = lastRowList(idx)
-                                    End If
+                                    For fillDownIdx = 0 To (fillDownFields.Count - 1)
+                                        If IsFillDownField(fillDownIdx, idx) Then 'if value if blank and in filldown list then 
+                                            If IsPreviousLevelsSame(fillDownIdx, rowList, lastRowList) Then 'if level 1 is not blank and level 2 is blank then don't fill down level 2
+                                                value = lastRowList(idx) 'get value from last row.
+                                            End If
+                                        End If
+                                    Next
                                 End If
                                 rowList.Add(value)
                             Next
@@ -106,6 +114,35 @@ Public Class GetExcel
         End Try
         Return False
 
+    End Function
+
+    Private Function IsPreviousLevelsSame(fillDownIdx As Object, rowList As List(Of Object), lastRowList As List(Of Object)) As Boolean
+        If fillDownIdx = 0 Then Return True
+        For previousIdx = fillDownIdx - 1 To 0 Step -1
+            Dim fillDownValueIdx As Integer
+            If Integer.TryParse(fillDownFields(previousIdx), fillDownValueIdx) Then
+                Return rowList(fillDownValueIdx - 1) = lastRowList(fillDownValueIdx - 1)
+            End If
+        Next
+        Return True
+    End Function
+
+    Private Function IsFillDownField(fillDownIdx As Object, idx As Integer) As Boolean
+        Dim fillDownValueIdx As Integer
+        If Integer.TryParse(fillDownFields(fillDownIdx), fillDownValueIdx) Then
+            Return (fillDownValueIdx - 1) = idx
+        End If
+        Return False
+    End Function
+
+    Private Function PassTests(rowList As List(Of Object), testFields() As String) As Boolean
+        For Each testField As String In testFields
+            Dim fieldIndex As Integer = 0
+            If Integer.TryParse(testField, fieldIndex) Then
+                If String.IsNullOrWhiteSpace(rowList(fieldIndex - 1)) Then Return False
+            End If
+        Next
+        Return True
     End Function
 
 #Region "IDisposable Support"

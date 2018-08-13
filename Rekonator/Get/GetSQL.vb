@@ -13,7 +13,7 @@ Public Class GetSQL
 
                 sourceConnection.Open()
 
-                commandText = reconSource.Parameters.GetParameter("create")
+                commandText = reconSource.Parameters.GetParameter("Create")
                 commandText = commandText.Insert(commandText.Length - 1, ", rekonid int IDENTITY(1,1)")
                 rekonConnection.ExecuteNonQuery(commandText)
 
