@@ -42,7 +42,7 @@ Public Class Reconciliation
     Public Shared Function GetMatchSelect(recon As Reconciliation) As String
         Dim isFirst As Boolean = True
         _sb.Clear()
-        '_sb.AppendLine(MakeDropTable("Match"))
+        _sb.AppendLine("--Use Rekonator")
 
         Dim cteTable As String = String.Empty
         Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing)
@@ -105,7 +105,7 @@ Public Class Reconciliation
     Public Shared Function GetDifferSelect(recon As Reconciliation) As String
         Dim isFirst As Boolean = True
         _sb.Clear()
-        '_sb.AppendLine(MakeDropTable("Differ"))
+        _sb.AppendLine("--Use Rekonator")
 
         Dim cteTable As String = String.Empty
         Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing)
@@ -266,6 +266,7 @@ Public Class Reconciliation
         Dim prefix As String = recon.LeftReconSource.ColumnPrefix
 
         _sb.Clear()
+        _sb.AppendLine("--Use Rekonator")
 
         If isAggA Then
             _sb.AppendLine("SELECT")
@@ -308,7 +309,7 @@ Public Class Reconciliation
         Dim prefix As String = recon.RightReconSource.ColumnPrefix
 
         _sb.Clear()
-        '_sb.AppendLine(MakeDropTable("Right"))
+        _sb.AppendLine("--Use Rekonator")
 
         If isAggB Then
             _sb.AppendLine("SELECT")
@@ -401,7 +402,7 @@ Public Class Reconciliation
                 If Not isFirst Then
                     sb.Append("AND ")
                 End If
-                sb.AppendLine($"{mord}.[{prefix}{gbc}] = {aorb}.[{prefix}{gbc}]")
+                sb.AppendLine($"ISNULL({mord}.[{prefix}{gbc}],'') = ISNULL({aorb}.[{prefix}{gbc}],'')")
                 isFirst = False
             Next
         Next

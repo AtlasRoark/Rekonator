@@ -7,7 +7,8 @@
              Background="{StaticResource MaterialDesignPaper}"
              mc:Ignorable="d"
              d:DesignHeight="450"
-             d:DesignWidth="800" x:Name="UserControlDataSource">
+             d:DesignWidth="800"
+             x:Name="UserControlDataSource">
 
     <UserControl.Resources>
         <local:AggToTextConverter x:Key="AggToTextConverter" />
@@ -27,15 +28,41 @@
             <Setter Property="Width"
                     Value="Auto" />
         </Style>
+
+        <!--Usage: Style="{StaticResource LinkButton}" Tag="Link Text"-->
+        <!--<Style x:Key="LinkButton"
+               TargetType="{x:Type Button}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <TextBlock TextDecorations="Underline" Text="{TemplateBinding Tag}" VerticalAlignment="Bottom">
+                                <ContentPresenter  Margin="0" />
+                            </TextBlock>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground"
+                    Value="{StaticResource AccentColorBrush4}" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver"
+                         Value="true">
+                    <Setter Property="Foreground"
+                            Value="{StaticResource  AccentColorBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>-->
+
     </UserControl.Resources>
 
-    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <Grid x:Name="GridReconSource" ScrollViewer.CanContentScroll="True"
-            HorizontalAlignment="Center"
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+        <Grid x:Name="GridReconSource"
+              ScrollViewer.CanContentScroll="True"
+              HorizontalAlignment="Center"
               Margin="15"
               DataContext="{Binding ElementName=UserControlDataSource}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="3*" />
                 <ColumnDefinition Width="5*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
@@ -79,20 +106,23 @@
                       ItemsSource="{Binding Translations}"
                       DisplayMemberPath="TranslationName" />-->
 
+
             <TextBlock Grid.Row="1"
                        Grid.Column="0"
-                       VerticalAlignment="Bottom" Margin="0,0,10,0"
+                       VerticalAlignment="Bottom"
+                       Margin="0,0,10,0"
                        Text="Rekonator Table" />
             <TextBox Grid.Row="1"
                      Grid.Column="1"
                      Text="{Binding ReconSource.ReconTable}" />
 
+            <!--<Button x:Name="ButtonSeeCreateCommand" Style="{StaticResource LinkButton}" Tag="See Create Command" FontSize="9" HorizontalContentAlignment="Right" Margin="10,0,0,6" Click="ButtonSeeCreateCommand_Click">-->
             <TextBlock Grid.Row="2"
                        Grid.Column="0"
                        Text="Parameters"
                        Margin="0,15,0,0" />
 
-            <DataGrid Grid.Row="3"
+            <DataGrid x:Name="DataGridParameters" Grid.Row="3"
                       Grid.Column="0"
                       Grid.ColumnSpan="2"
                       RowHeaderWidth="0"
@@ -163,7 +193,8 @@
                      FontFamily="{StaticResource SourceSans}"
                      FontSize="14"
                      Grid.ColumnSpan="2"
-                     TextWrapping="Wrap" TextAlignment="Left"
+                     TextWrapping="Wrap"
+                     TextAlignment="Left"
                      Text="{Binding ReconSource.Aggregations, Converter={StaticResource AggToTextConverter}}" />
 
             <Button Grid.Row="11"

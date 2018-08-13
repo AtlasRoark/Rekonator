@@ -6,10 +6,12 @@ Public Class GetSQL
     Public Function Load(reconSource As ReconSource, fromDate As DateTime, toDate As DateTime)
         Using sourceConnection = New SqlConnection(reconSource.Parameters.GetParameter("connectionstring"))
             Using rekonConnection As New SQL()
+                rekonConnection.DropTable(reconSource.ReconTable)
+            End Using
+            Using rekonConnection As New SQL()
                 Dim commandText As String = String.Empty
 
                 sourceConnection.Open()
-                rekonConnection.DropTable(reconSource.ReconTable)
 
                 commandText = reconSource.Parameters.GetParameter("create")
                 commandText = commandText.Insert(commandText.Length - 1, ", rekonid int IDENTITY(1,1)")

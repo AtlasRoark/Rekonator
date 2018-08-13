@@ -58,8 +58,11 @@ Public Class GetExcel
                         rowList.Add(excelReader.GetValue(idx))
                     Next
 
+                    Using sql As New SQL
+                        sql.DropTable(reconTable)
+                    End Using
                     Using sql As New SQL(reconTable, fieldCount, fieldList, typeList)
-                        If sql.CreateTable() Then
+                        If sql.CreateTable(reconSource) Then
                             Application.Message($"Table: '{reconTable}' created.")
                         Else
                             Return False

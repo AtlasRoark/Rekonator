@@ -55,8 +55,11 @@ Public Class GetQBD
             Dim typeList As List(Of String) = {"String", "Date", "String", "Integer", "Currency", "String", "String"}.ToList
 
             _fieldCount = headerList.Count
+            Using sql As New SQL
+                sql.DropTable(reconSource.ReconTable)
+            End Using
             _sql = New SQL(reconSource.ReconTable, _fieldCount, headerList, typeList)
-            If Not _sql.CreateTable() Then
+            If Not _sql.CreateTable(reconSource) Then
                 Return False
             End If
             WalkGeneralDetailReportQueryRs()

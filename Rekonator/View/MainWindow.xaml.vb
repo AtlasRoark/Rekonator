@@ -96,6 +96,8 @@ Partial Class MainWindow
                     reconSource.IsLoaded = qbd.LoadReport(reconSource, _vm.Reconciliation.FromDate, _vm.Reconciliation.ToDate)
                 End Using
         End Select
+
+        _vm.Solution = _vm.Solution 'Trigger OnPropChange incase parameters were updated
     End Sub
 
 
@@ -170,6 +172,7 @@ Partial Class MainWindow
         Using sql As New SQL
             sql.DropTables({"Left", "Right", "Match", "Differ"})
         End Using 'Have to close connection for drop table to happen
+
         'Order is important
         _vm.MatchResultSet = GetResultSet(ResultSet.ResultSetName.Match, _vm.Reconciliation)
         _vm.DifferResultSet = GetResultSet(ResultSet.ResultSetName.Differ, _vm.Reconciliation)

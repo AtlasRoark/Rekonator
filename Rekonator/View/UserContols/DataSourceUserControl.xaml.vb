@@ -79,5 +79,9 @@
         Dim mainWindow As MainWindow = Utility.FindAncestor(Me, GetType(MahApps.Metro.Controls.MetroWindow))
         mainWindow.LoadReconSource(Side)
     End Sub
+
+    Private Sub ButtonSeeCreateCommand_Click(sender As Object, e As RoutedEventArgs)
+
+    End Sub
 End Class
 

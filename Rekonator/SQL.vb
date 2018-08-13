@@ -50,13 +50,12 @@ Public Class SQL
         Return Nothing
     End Function
 
-    Public Function CreateTable() As Boolean
+    Public Function CreateTable(reconSource As ReconSource) As Boolean
         Try
             _sb.Clear()
-            _sb.AppendLine($"IF(OBJECT_ID('Rekonator..{_reconTable}') IS NOT NULL) DROP TABLE [{_reconTable}];")
+            '_sb.AppendLine($"IF(OBJECT_ID('Rekonator..{_reconTable}') IS NOT NULL) DROP TABLE [{_reconTable}];")
 
             _sb.AppendLine($"CREATE TABLE [{_reconTable}] (")
-            _sb.AppendLine("rekonid int IDENTITY(1,1),")
             For idx = 0 To _fieldCount - 1
                 _sb.Append($"[{_headerList(idx)}]")
                 Select Case _typeList(idx)
@@ -81,11 +80,17 @@ Public Class SQL
                     Case Else
                         Application.ErrorMessage("Unknown Type")
                 End Select
-
             Next
+            _sb.AppendLine("[rekonid] int IDENTITY(1,1)")
             _sb.AppendLine(");")
 
-            Dim command As New SqlCommand(_sb.ToString, _connection)
+            Dim createCommand As String = _sb.ToString
+            If reconSource.Parameters.IsExist("create") Then
+                reconSource.Parameters.UpdateParameter("create", createCommand)
+            Else
+                reconSource.Parameters.AddParameter("create", createCommand)
+            End If
+            Dim command As New SqlCommand(createCommand, _connection)
             command.ExecuteNonQuery()
             Return True
         Catch ex As Exception

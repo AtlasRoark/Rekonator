@@ -87,9 +87,6 @@ Public Class MainViewModel
         End Get
         Set(value As Reconciliation)
             _reconciliation = value
-            If _reconciliation IsNot Nothing Then
-                'LoadReconSources(_reconciliation)
-            End If
             OnPropertyChanged("Reconciliation")
         End Set
     End Property
