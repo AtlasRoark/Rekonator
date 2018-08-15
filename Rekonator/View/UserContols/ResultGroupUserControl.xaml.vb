@@ -1,21 +1,21 @@
-﻿Public Class ResultUserControl
+﻿Public Class ResultGroupUserControl
     Inherits UserControl
 
 #Region "Dependency Properties"
 
-    Public Property ResultSet As ResultSet
+    Public Property ResultGroup As ResultGroup
         Get
-            Return GetValue(ResultSetProperty)
+            Return GetValue(ResultGroupProperty)
         End Get
 
-        Set(ByVal value As ResultSet)
-            SetValue(ResultSetProperty, value)
+        Set(ByVal value As ResultGroup)
+            SetValue(ResultGroupProperty, value)
         End Set
     End Property
 
-    Public Shared ReadOnly ResultSetProperty As DependencyProperty =
-                           DependencyProperty.Register("ResultSet",
-                           GetType(ResultSet), GetType(ResultUserControl),
+    Public Shared ReadOnly ResultGroupProperty As DependencyProperty =
+                           DependencyProperty.Register("ResultGroup",
+                           GetType(ResultGroup), GetType(ResultGroupUserControl),
                            New PropertyMetadata(Nothing))
 
 
@@ -31,7 +31,7 @@
 
     Public Shared ReadOnly HasLoadedProperty As DependencyProperty =
                            DependencyProperty.Register("HasLoaded",
-                           GetType(Boolean), GetType(ResultUserControl),
+                           GetType(Boolean), GetType(ResultGroupUserControl),
                            New PropertyMetadata(Nothing))
 
 #End Region

@@ -93,57 +93,57 @@ Public Class MainViewModel
     Private _reconciliation As Reconciliation
 #End Region
 
-#Region "-- Result Set Properties --"
+#Region "-- Result Group Properties --"
 
-    Public Property LeftResultSet As ResultSet
+    Public Property LeftResultGroup As ResultGroup
         Get
-            LeftResultSet = _LeftResultSet
+            LeftResultGroup = _leftResultGroup
         End Get
-        Set(value As ResultSet)
-            _LeftResultSet = value
-            OnPropertyChanged("LeftResultSet")
+        Set(value As ResultGroup)
+            _leftResultGroup = value
+            OnPropertyChanged("LeftResultGroup")
         End Set
     End Property
-    Private _leftResultSet As ResultSet
+    Private _leftResultGroup As ResultGroup
 
-    Public Property RightResultSet As ResultSet
+    Public Property RightResultGroup As ResultGroup
         Get
-            RightResultSet = _rightResultSet
+            RightResultGroup = _rightResultGroup
         End Get
-        Set(value As ResultSet)
-            _rightResultSet = value
-            OnPropertyChanged("RightResultSet")
+        Set(value As ResultGroup)
+            _rightResultGroup = value
+            OnPropertyChanged("RightResultGroup")
         End Set
     End Property
-    Private _rightResultSet As ResultSet
+    Private _rightResultGroup As ResultGroup
 
-    Public Property DifferResultSet As ResultSet
+    Public Property DifferResultGroup As ResultGroup
         Get
-            DifferResultSet = _differResultSet
+            DifferResultGroup = _differResultGroup
         End Get
-        Set(value As ResultSet)
-            _differResultSet = value
-            OnPropertyChanged("DifferResultSet")
+        Set(value As ResultGroup)
+            _differResultGroup = value
+            OnPropertyChanged("DifferResultGroup")
         End Set
     End Property
-    Private _differResultSet As ResultSet
+    Private _differResultGroup As ResultGroup
 
-    Public Property MatchResultSet As ResultSet
+    Public Property MatchResultGroup As ResultGroup
         Get
-            MatchResultSet = _matchResultSet
+            MatchResultGroup = _matchResultGroup
         End Get
-        Set(value As ResultSet)
-            _matchResultSet = value
-            OnPropertyChanged("MatchResultSet")
+        Set(value As ResultGroup)
+            _matchResultGroup = value
+            OnPropertyChanged("MatchResultGroup")
         End Set
     End Property
+    Private _matchResultGroup As ResultGroup
 
     Public Sub ClearMessageLog()
         _messages.Clear()
         MessageLog = _messages
     End Sub
 
-    Private _matchResultSet As ResultSet
 
     'Public Property ResultSets As ObservableCollection(Of ResultSet)
     '    Get

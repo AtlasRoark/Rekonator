@@ -1,0 +1,67 @@
+﻿<UserControl x:Class="ResultSetUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Rekonator"
+             Background="{StaticResource MaterialDesignPaper}"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+            x:Name="UserControlResultSet">
+
+    <UserControl.Resources>
+        <local:ValueToBrushConverter x:Key="ValueToBrushConverter" />
+        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <Style TargetType="DataGridCell"
+               BasedOn="{StaticResource {x:Type DataGridCell}}">
+            <Setter Property="Margin"
+                    Value="1" />
+            <Setter Property="Padding"
+                    Value="0" />
+        </Style>
+    </UserControl.Resources>
+    
+        <Border BorderBrush="{StaticResource HighlightBrush}"
+                BorderThickness="3"
+                Margin="3">
+        <ScrollViewer>
+            <StackPanel Margin="10"
+                        DataContext="{Binding ElementName=UserControlResultSet}">
+                <DataGrid IsReadOnly="True"
+                          AutoGenerateColumns="True"
+                          FontSize="11"
+                          Margin="0"
+                          ItemsSource="{Binding ResultSet.ResultSetDataView}">
+                    <!--<DataGridRow Style="{DynamicResource RekonDataGridRowStyle}" />-->
+
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell"
+                               BasedOn="{StaticResource {x:Type DataGridCell}}">
+                            <Setter Property="Foreground"
+                                    Value="{Binding RelativeSource={RelativeSource Self}, Path=Content.Text, Converter={StaticResource ValueToBrushConverter}, ConverterParameter=F}" />
+                            <Setter Property="Background"
+                                    Value="{Binding RelativeSource={RelativeSource Self}, Path=Content.Text, Converter={StaticResource ValueToBrushConverter}, ConverterParameter=B}" />
+                            <EventSetter Event="PreviewKeyDown"
+                                         Handler="DataGridCell_PreviewKeyDown" />
+                        </Style>
+                    </DataGrid.CellStyle>
+                </DataGrid>
+                <Expander Header="Summary"
+                          ExpandDirection="Up">
+                    <StackPanel Margin="10">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox Text="Record Count" />
+                            <TextBox Text="{Binding ResultSet.ResultSetRecordCount}" />
+                        </StackPanel>
+                        <TextBox Text="SQL Command" />
+                        <TextBox Text="{Binding ResultSet.ResultSetSQL}"
+                                 TextWrapping="Wrap"
+                                 FontFamily="{StaticResource SourceSans}"
+                                 FontSize="14" />
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+
+</UserControl>

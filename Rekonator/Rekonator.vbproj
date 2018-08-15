@@ -70,6 +70,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Converters\BooleanToVisibilityConverter.vb" />
+    <Compile Include="Converters\NameToResultSetConverter.vb" />
     <Compile Include="Get\GetExcel.vb" />
     <Compile Include="Get\GetQBD.vb" />
     <Compile Include="Helpers\ExtensionMethods.vb" />
@@ -77,6 +78,7 @@
     <Compile Include="Models\Column.vb" />
     <Compile Include="Models\MessageEntry.vb" />
     <Compile Include="Models\Parameter.vb" />
+    <Compile Include="Models\ResultGroup.vb" />
     <Compile Include="Models\ResultSet.vb" />
     <Compile Include="SQL.vb" />
     <Compile Include="ViewModel\MainViewModel.vb" />
@@ -105,8 +107,11 @@
     <Compile Include="View\UserContols\MessageUserControl.xaml.vb">
       <DependentUpon>MessageUserControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="View\UserContols\ResultUserControl.xaml.vb">
-      <DependentUpon>ResultUserControl.xaml</DependentUpon>
+    <Compile Include="View\UserContols\ResultSetUserControl.xaml.vb">
+      <DependentUpon>ResultSetUserControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\UserContols\ResultGroupUserControl.xaml.vb">
+      <DependentUpon>ResultGroupUserControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\UserContols\SolutionUserControl.xaml.vb">
       <DependentUpon>SolutionUserControl.xaml</DependentUpon>
@@ -131,7 +136,11 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="View\UserContols\ResultUserControl.xaml">
+    <Page Include="View\UserContols\ResultSetUserControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\UserContols\ResultGroupUserControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

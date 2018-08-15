@@ -81,8 +81,10 @@
                     </Rectangle.OpacityMask>
                 </Rectangle>
             </Button>
-            <TextBox Text="{Binding Solution.SolutionName}" />
-            <TextBox Text="{Binding Reconciliation.ReconciliationName}" />
+            <TextBox Text="{Binding Solution.SolutionName}"
+                     Foreground="{StaticResource AccentSelectedColorBrush}" />
+            <TextBox Text="{Binding Reconciliation.ReconciliationName}"
+                     Foreground="{StaticResource AccentSelectedColorBrush}"/>
         </controls:WindowCommands>
     </controls:MetroWindow.LeftWindowCommands>
 
@@ -152,10 +154,9 @@
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
-        <local:ResultUserControl Grid.Row="1"
+        <local:ResultGroupUserControl Grid.Row="1"
                                  Grid.RowSpan="3"
-                                 Grid.Column="0"
-                                 ResultSet="{Binding LeftResultSet}"  HasLoaded="True"/>
+                                 Grid.Column="0" ResultGroup="{Binding LeftResultGroup}"  HasLoaded="True"/>
 
         <StackPanel Grid.Row="0"
                     Grid.Column="2">
@@ -176,10 +177,10 @@
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
-        <local:ResultUserControl Grid.Row="1"
+        <local:ResultGroupUserControl Grid.Row="1"
                                  Grid.RowSpan="3"
                                  Grid.Column="2"
-                                 ResultSet="{Binding RightResultSet}" HasLoaded="True" />
+                                 ResultGroup="{Binding RightResultGroup}" HasLoaded="True" />
  
         <StackPanel Grid.Row="0"
                     Grid.Column="1">
@@ -197,9 +198,9 @@
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
-        <local:ResultUserControl Grid.Row="1"
+        <local:ResultGroupUserControl Grid.Row="1"
                                  Grid.Column="1"
-                                 ResultSet="{Binding DifferResultSet}" />
+                                 ResultGroup="{Binding DifferResultGroup}" />
         <!--<DataGrid x:Name="dgDiffer"
                   Grid.Row="1"
                   Grid.Column="1"
@@ -239,9 +240,9 @@
                 </ToggleButton>
             </StackPanel>
         </StackPanel>
-        <local:ResultUserControl  Grid.Row="3"
+        <local:ResultGroupUserControl  Grid.Row="3"
                                   Grid.Column="1"
-                                  ResultSet="{Binding MatchResultSet}" />
+                                  ResultGroup="{Binding MatchResultGroup}" />
 
         <!--<DataGrid x:Name="dgMatch"
                   Grid.Row="3"

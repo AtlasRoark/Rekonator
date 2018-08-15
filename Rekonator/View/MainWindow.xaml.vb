@@ -58,8 +58,8 @@ Partial Class MainWindow
         If Not reconciliation.LeftReconSource.IsLoaded Then LoadReconSource(ReconSource.SideName.Left)
         If Not reconciliation.RightReconSource.IsLoaded Then LoadReconSource(ReconSource.SideName.Right)
 
-        _vm.LeftResultSet = GetResultSet(ResultSet.ResultSetName.Left, _vm.Reconciliation, True)
-        _vm.RightResultSet = GetResultSet(ResultSet.ResultSetName.Right, _vm.Reconciliation, True)
+        _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation, True)
+        _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation, True)
     End Sub
 
     Public Sub LoadReconSource(side As ReconSource.SideName)
@@ -171,8 +171,8 @@ Partial Class MainWindow
                                                        Me.BottomFlyout.IsOpen = False
                                                    End Sub)
 
-        _vm.DifferResultSet = New ResultSet(ResultSet.ResultSetName.Differ)
-        _vm.MatchResultSet = New ResultSet(ResultSet.ResultSetName.Match)
+        _vm.DifferResultGroup = New ResultGroup(ResultGroup.ResultGroupType.Differ)
+        _vm.MatchResultGroup = New ResultGroup(ResultGroup.ResultGroupType.Match)
 
         'If _left.Rows.Count = 0 Or _right.Rows.Count = 0 Then Exit Sub
 
@@ -181,10 +181,10 @@ Partial Class MainWindow
         End Using 'Have to close connection for drop table to happen
 
         'Order is important
-        _vm.MatchResultSet = GetResultSet(ResultSet.ResultSetName.Match, _vm.Reconciliation)
-        _vm.DifferResultSet = GetResultSet(ResultSet.ResultSetName.Differ, _vm.Reconciliation)
-        _vm.LeftResultSet = GetResultSet(ResultSet.ResultSetName.Left, _vm.Reconciliation)
-        _vm.RightResultSet = GetResultSet(ResultSet.ResultSetName.Right, _vm.Reconciliation)
+        _vm.MatchResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Match, _vm.Reconciliation)
+        _vm.DifferResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Differ, _vm.Reconciliation)
+        _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation)
+        _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation)
         Application.Current.Dispatcher.BeginInvoke(Sub()
                                                        Dim tabControls As New List(Of TabControl)
                                                        Utility.GetLogicalChildCollection(Of TabControl)(Me, tabControls)
@@ -195,31 +195,33 @@ Partial Class MainWindow
 
     End Sub
 
-    Private Function GetResultSet(resultSetName As ResultSet.ResultSetName, reconciliation As Reconciliation, Optional isSource As Boolean = False) As ResultSet
-        Dim resultSet As New ResultSet(resultSetName)
+    Private Function GetResultGroup(resultSetName As ResultGroup.ResultGroupType, reconciliation As Reconciliation, Optional isSource As Boolean = False) As ResultGroup
+        Dim resultGroup As New ResultGroup(resultSetName)
         Dim sqlCmd As String = String.Empty
         Dim dtTable As DataTable = Nothing
+        Dim loadedResultSet As New ResultSet
+        Dim resultResultSet As New ResultSet
 
         Select Case resultSetName
-            Case ResultSet.ResultSetName.Left
+            Case ResultGroup.ResultGroupType.Left
                 If isSource Then
                     sqlCmd = ReconSource.GetSelect(reconciliation.LeftReconSource)
                 Else
                     sqlCmd = Reconciliation.GetLeftSelect(_vm.Reconciliation)
-                    resultSet.LoadedSQLCommand = _vm.LeftResultSet.LoadedSQLCommand
-                    resultSet.LoadedDataView = _vm.LeftResultSet.LoadedDataView
+                    loadedResultSet.ResultSetSQL = _vm.LeftResultGroup.ResultSets(ResultGroup.ResultSetType.Loaded).ResultSetSQL
+                    loadedResultSet.ResultSetDataView = _vm.LeftResultGroup.ResultSets(ResultGroup.ResultSetType.Loaded).ResultSetDataView
                 End If
-            Case ResultSet.ResultSetName.Right
+            Case ResultGroup.ResultGroupType.Right
                 If isSource Then
                     sqlCmd = ReconSource.GetSelect(reconciliation.RightReconSource)
                 Else
                     sqlCmd = Reconciliation.GetRightSelect(_vm.Reconciliation)
-                    resultSet.LoadedSQLCommand = _vm.LeftResultSet.LoadedSQLCommand
-                    resultSet.LoadedDataView = _vm.RightResultSet.LoadedDataView
+                    loadedResultSet.ResultSetSQL = _vm.RightResultGroup.ResultSets(ResultGroup.ResultSetType.Loaded).ResultSetSQL
+                    loadedResultSet.ResultSetDataView = _vm.RightResultGroup.ResultSets(ResultGroup.ResultSetType.Loaded).ResultSetDataView
                 End If
-            Case ResultSet.ResultSetName.Differ
+            Case ResultGroup.ResultGroupType.Differ
                 sqlCmd = Reconciliation.GetDifferSelect(_vm.Reconciliation)
-            Case ResultSet.ResultSetName.Match
+            Case ResultGroup.ResultGroupType.Match
                 sqlCmd = Reconciliation.GetMatchSelect(_vm.Reconciliation)
         End Select
         Application.Message($"Getting results for {resultSetName.ToString}.")
@@ -228,15 +230,18 @@ Partial Class MainWindow
         End Using
         If dtTable IsNot Nothing Then
             If isSource Then
-                resultSet.LoadedDataView = dtTable.AsDataView
-                resultSet.LoadedSQLCommand = sqlCmd
+                loadedResultSet.ResultSetDataView = dtTable.AsDataView
+                loadedResultSet.ResultSetSQL = sqlCmd
+                loadedResultSet.ResultSetRecordCount = dtTable.Rows.Count
             Else
-                resultSet.ResultDataView = dtTable.AsDataView
-                resultSet.ResultSQLCommand = sqlCmd
+                resultResultSet.ResultSetDataView = dtTable.AsDataView
+                resultResultSet.ResultSetSQL = sqlCmd
+                resultResultSet.ResultSetRecordCount = dtTable.Rows.Count
             End If
-            resultSet.RecordCount = dtTable.Rows.Count
         End If
-        Return resultSet
+        resultGroup.ResultSets.Add(ResultGroup.ResultSetType.Loaded, loadedResultSet)
+        resultGroup.ResultSets.Add(ResultGroup.ResultSetType.Result, resultResultSet)
+        Return resultGroup
     End Function
 
 
