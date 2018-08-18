@@ -26,7 +26,7 @@
                 Margin="3">
         <ScrollViewer>
             <StackPanel Margin="10"
-                        DataContext="{Binding ElementName=UserControlResultSet}">
+                        DataContext="{Binding ElementName=UserControlResultSet}" CanHorizontallyScroll="True">
                 <DataGrid IsReadOnly="True"
                           AutoGenerateColumns="True"
                           FontSize="11"
@@ -43,6 +43,8 @@
                                     Value="{Binding RelativeSource={RelativeSource Self}, Path=Content.Text, Converter={StaticResource ValueToBrushConverter}, ConverterParameter=B}" />
                             <EventSetter Event="PreviewKeyDown"
                                          Handler="DataGridCell_PreviewKeyDown" />
+                            <EventSetter Event="MouseRightButtonDown"
+                                         Handler="DataGridRow_MouseRightButtonDown" />
                         </Style>
                     </DataGrid.CellStyle>
                 </DataGrid>

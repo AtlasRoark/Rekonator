@@ -1,4 +1,5 @@
-﻿Imports System.Text
+﻿Imports System.Data
+Imports System.Text
 Imports Rekonator
 
 <Serializable()>
@@ -39,7 +40,29 @@ Public Class Reconciliation
         Return Reconciliations.Where(Function(w) w.ReconciliationName = reconciliationName).FirstOrDefault
     End Function
 
-    Public Shared Function GetMatchSelect(recon As Reconciliation) As String
+    Public Shared Function GetLeftRightDrillDown(reconSouce As ReconSource,
+                                              targetResultGroupName As ResultGroup.ResultGroupType,
+                                              sourceResultGroupName As ResultGroup.ResultGroupType,
+                                              selectedRow As DataRow,
+                                              columns As List(Of String)) As String
+
+        Dim isAgg As Boolean = (reconSouce.Aggregations IsNot Nothing)
+        Dim aorb As String = IIf(targetResultGroupName = ResultGroup.ResultGroupType.Left, "a", "b")
+
+        _sb.Clear()
+        _sb.AppendLine("--Use Rekonator")
+
+        If isAgg Then
+        Else
+            Dim colIdx As Integer = columns.FindIndex(Function(f) f.Equals($"id{aorb.ToUpper}"))
+            Dim value As String = String.Empty
+            If colIdx >= 0 Then value = selectedRow.ItemArray(colIdx)
+            _sb.AppendLine($"SELECT * FROM {reconSouce.ReconTable} WHERE [rekonid] = {value}")
+        End If
+        Return _sb.ToString
+    End Function
+
+    Public Shared Function GetMatchResult(recon As Reconciliation) As String
         Dim isFirst As Boolean = True
         _sb.Clear()
         _sb.AppendLine("--Use Rekonator")
@@ -102,7 +125,7 @@ Public Class Reconciliation
     '    Return mdt.ToString
     'End Function
 
-    Public Shared Function GetDifferSelect(recon As Reconciliation) As String
+    Public Shared Function GetDifferResult(recon As Reconciliation) As String
         Dim isFirst As Boolean = True
         _sb.Clear()
         _sb.AppendLine("--Use Rekonator")
@@ -266,95 +289,50 @@ Public Class Reconciliation
         'Next
         'Return gb.ToString
     End Function
-    Public Shared Function GetLeftSelect(recon As Reconciliation) As String
-        Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing)
-        Dim prefix As String = recon.LeftReconSource.ColumnPrefix
+    Public Shared Function GetLeftRightResult(reconSouce As ReconSource, resultGroupName As ResultGroup.ResultGroupType) As String
+        Dim isAgg As Boolean = (reconSouce.Aggregations IsNot Nothing)
+        Dim prefix As String = reconSouce.ColumnPrefix
+        Dim aorb As String = IIf(resultGroupName = ResultGroup.ResultGroupType.Left, "a", "b")
+        Dim lorr As String = IIf(resultGroupName = ResultGroup.ResultGroupType.Left, "[Left]", "[Right]")
 
         _sb.Clear()
         _sb.AppendLine("--Use Rekonator")
 
-        If isAggA Then
+        If isAgg Then
             _sb.AppendLine("SELECT")
-            _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", prefix))
-            For Each aop As AggregateOperation In recon.LeftReconSource.Aggregations(0).AggregateOperations
-                _sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}(a.[{prefix}{aop.SourceColumn}])")
+            _sb.AppendLine(MakeGroupByColumns(reconSouce.Aggregations(0).GroupByColumns, aorb, prefix))
+            For Each aop As AggregateOperation In reconSouce.Aggregations(0).AggregateOperations
+                _sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}({aorb}.[{prefix}{aop.SourceColumn}])")
             Next
-            _sb.AppendLine("INTO [Left]")
-            _sb.AppendLine($"FROM [dbo].[{recon.LeftReconSource.ReconTable}] a")
+            _sb.AppendLine($"INTO {lorr}")
+            _sb.AppendLine($"FROM [dbo].[{reconSouce.ReconTable}] {aorb}")
             _sb.AppendLine("WHERE")
-            If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) Then
-                _sb.AppendLine($"{recon.LeftReconSource.WhereClause.Replace("x!.", "a.")}")
+            If Not String.IsNullOrWhiteSpace(reconSouce.WhereClause) Then
+                _sb.AppendLine($"{reconSouce.WhereClause.Replace("x!.", $"{aorb}.")}")
                 _sb.AppendLine("AND")
             End If
-            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Match", "a", prefix))
+            _sb.AppendLine(MakeNotExists1(reconSouce, "Match", aorb, prefix))
             _sb.AppendLine("AND")
-            _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Differ", "a", prefix))
+            _sb.AppendLine(MakeNotExists1(reconSouce, "Differ", aorb, prefix))
             _sb.AppendLine("GROUP BY ")
-            _sb.AppendLine(MakeGroupByColumns(recon.LeftReconSource.Aggregations(0).GroupByColumns, "a", prefix))
+            _sb.AppendLine(MakeGroupByColumns(reconSouce.Aggregations(0).GroupByColumns, aorb, prefix))
             _sb.AppendLine()
-            _sb.AppendLine("SELECT * FROM [Left] a")
+            _sb.AppendLine($"SELECT * FROM {lorr} {aorb}")
         Else
-            _sb.AppendLine("SELECT a.*")
-            _sb.AppendLine("INTO [Left]")
-            _sb.AppendLine($"FROM [dbo].[{recon.LeftReconSource.ReconTable}] a")
+            _sb.AppendLine($"SELECT {aorb}.*")
+            _sb.AppendLine($"INTO {lorr}")
+            _sb.AppendLine($"FROM [dbo].[{reconSouce.ReconTable}] {aorb}")
             _sb.AppendLine("WHERE")
-            _sb.AppendLine("NOT EXISTS (SELECT * FROM [Match] m WHERE m.IdA = a.rekonid)")
+            _sb.AppendLine($"NOT EXISTS (SELECT * FROM [Match] m WHERE m.Id{aorb.ToUpper} = {aorb}.rekonid)")
             _sb.AppendLine("AND")
-            _sb.AppendLine("NOT EXISTS (SELECT * FROM [Differ] d WHERE d.IdA = a.rekonid)")
+            _sb.AppendLine($"NOT EXISTS (SELECT * FROM [Differ] d WHERE d.Id{aorb.ToUpper} = {aorb}.rekonid)")
             _sb.AppendLine()
-            _sb.AppendLine("SELECT * FROM [Left] a")
-            If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) Then
-                _sb.AppendLine($"WHERE {recon.LeftReconSource.WhereClause.Replace("x!.", "a.")}")
+            _sb.AppendLine($"SELECT * FROM {lorr} {aorb}")
+            If Not String.IsNullOrWhiteSpace(reconSouce.WhereClause) Then
+                _sb.AppendLine($"WHERE {reconSouce.WhereClause.Replace("x!.", $"{aorb}.")}")
             End If
         End If
         Return _sb.ToString
-    End Function
-    Public Shared Function GetRightSelect(recon As Reconciliation) As String
-        Dim isAggB As Boolean = (recon.RightReconSource.Aggregations IsNot Nothing)
-        Dim prefix As String = recon.RightReconSource.ColumnPrefix
-
-        _sb.Clear()
-        _sb.AppendLine("--Use Rekonator")
-
-        If isAggB Then
-            _sb.AppendLine("SELECT")
-            _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b", prefix))
-            For Each aop As AggregateOperation In recon.RightReconSource.Aggregations(0).AggregateOperations
-                _sb.AppendLine($",[{aop.AggregateColumn}] = {aop.Operation.ToString}(b.[{prefix}{aop.SourceColumn}])")
-            Next
-            _sb.AppendLine("INTO [Right]")
-            _sb.AppendLine($"FROM [dbo].[{recon.RightReconSource.ReconTable}] b")
-            _sb.AppendLine("WHERE")
-            If Not String.IsNullOrWhiteSpace(recon.RightReconSource.WhereClause) Then
-                _sb.AppendLine($"{recon.RightReconSource.WhereClause.Replace("x!.", "b.")}")
-                _sb.AppendLine("AND")
-            End If
-            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Match", "b", prefix))
-            _sb.AppendLine("AND")
-            _sb.AppendLine(MakeNotExists1(recon.RightReconSource, "Differ", "b", prefix))
-            _sb.AppendLine("GROUP BY ")
-            _sb.AppendLine(MakeGroupByColumns(recon.RightReconSource.Aggregations(0).GroupByColumns, "b", prefix))
-            _sb.AppendLine()
-            _sb.AppendLine("SELECT * FROM [Right] b")
-        Else
-            _sb.AppendLine("SELECT b.*")
-            _sb.AppendLine("INTO [Right]")
-            _sb.AppendLine($"FROM [dbo].[{recon.RightReconSource.ReconTable}] b")
-            _sb.AppendLine("WHERE")
-            _sb.AppendLine("NOT EXISTS (SELECT * FROM [Match] m WHERE m.IdB = b.rekonid)")
-            _sb.AppendLine("AND")
-            _sb.AppendLine("NOT EXISTS (SELECT * FROM [Differ] d WHERE d.IdB = b.rekonid)")
-            _sb.AppendLine()
-            _sb.AppendLine("SELECT * FROM [Right] b")
-            If Not String.IsNullOrWhiteSpace(recon.RightReconSource.WhereClause) Then
-                _sb.AppendLine($"WHERE {recon.RightReconSource.WhereClause.Replace("x!.", "b.")}")
-            End If
-
-        End If
-
-
-        Return _sb.ToString
-
     End Function
 
     Private Shared Function MakeNotExists2(recon As Reconciliation, tableName As String, aorb As String) As String

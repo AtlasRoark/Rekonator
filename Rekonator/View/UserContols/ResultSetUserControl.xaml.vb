@@ -1,4 +1,6 @@
-﻿Partial Public Class ResultSetUserControl
+﻿Imports System.Data
+
+Partial Public Class ResultSetUserControl
     Inherits UserControl
 
 #Region "Dependency Properties"
@@ -24,6 +26,34 @@
         ' This call is required by the designer.
         InitializeComponent()
         ' Add any initialization after the InitializeComponent() call.
+    End Sub
+
+    Private Sub DataGridRow_MouseRightButtonDown(sender As Object, e As MouseButtonEventArgs)
+        Dim dgc As DataGridCell = TryCast(sender, DataGridCell)
+        If dgc Is Nothing Then Exit Sub
+
+        Dim dgr As DataGridRow = Utility.FindAncestor(dgc, GetType(DataGridRow))
+        If dgr Is Nothing Then Exit Sub
+
+        Dim dr As DataRow = TryCast(dgr.Item.Row, DataRow)
+        If dr Is Nothing Then Exit Sub
+
+        Dim dg As DataGrid = Utility.FindAncestor(dgc, GetType(DataGrid))
+        If dg Is Nothing Then Exit Sub
+
+        Dim rsuc As ResultSetUserControl = TryCast(dg.DataContext, ResultSetUserControl)
+        If rsuc Is Nothing Then Exit Sub
+
+        Dim rguc As ResultGroupUserControl = TryCast(rsuc.DataContext, ResultGroupUserControl)
+        If rguc Is Nothing Then Exit Sub
+
+        'Dim rgt As ResultGroup.ResultGroupType = TryCast([Enum].Parse(GetType(ResultGroup.ResultGroupType), rguc.ResultGroup), ResultGroup.ResultGroupType)
+
+        Dim mainWindow As MainWindow = Utility.FindAncestor(Me, GetType(MahApps.Metro.Controls.MetroWindow))
+        If mainWindow Is Nothing Then Exit Sub
+
+        Dim columns As List(Of String) = dg.Columns.Select(Function(s) s.Header.ToString).ToList
+        mainWindow.DillDownLoaded(rguc.ResultGroup.ResultGroupName, dr, columns)
     End Sub
 
     Private Sub DataGridCell_PreviewKeyDown(sender As Object, e As KeyEventArgs)

@@ -12,7 +12,7 @@ Public Class ReconSource
     Property Columns As New List(Of Column)
     Property Aggregations As New List(Of Aggregate)
 
-    Public Shared Function GetSelect(reconSource As ReconSource) As String
+    Public Shared Function GetLoaded(reconSource As ReconSource) As String
         Dim selectCommand As String = $"SELECT * FROM {reconSource.ReconTable} x"
         If Not String.IsNullOrWhiteSpace(reconSource.WhereClause) Then
             selectCommand += $" WHERE {reconSource.WhereClause.Replace("x!.", "x.")}"

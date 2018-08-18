@@ -80,10 +80,6 @@
         mainWindow.LoadReconSource(Side)
     End Sub
 
-    Private Sub ButtonSeeCreateCommand_Click(sender As Object, e As RoutedEventArgs)
-
-    End Sub
-
     Private Sub DataGridParameters_PreviewKeyDown(sender As Object, e As KeyEventArgs)
         If (e.Key = Key.Enter) Or
            (e.Key = Key.V AndAlso (Keyboard.Modifiers And ModifierKeys.Control) = ModifierKeys.Control) Then
@@ -104,8 +100,8 @@
                         End If
                     End If
                     e.Handled = True
-                    End If
                 End If
+            End If
         End If
     End Sub
 

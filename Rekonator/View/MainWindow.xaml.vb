@@ -53,13 +53,20 @@ Partial Class MainWindow
             End If
         End If
     End Sub
+
+    Friend Sub DillDownLoaded(resultGroupName As ResultGroup.ResultGroupType, dr As DataRow, columns As List(Of String))
+        _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation, ResultGroup.ResultSetType.DrillDown, resultGroupName, dr, columns)
+        _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation, ResultGroup.ResultSetType.DrillDown, resultGroupName, dr, columns)
+
+    End Sub
+
     Public Sub LoadReconSources(reconciliation As Reconciliation)
 
         If Not reconciliation.LeftReconSource.IsLoaded Then LoadReconSource(ReconSource.SideName.Left)
         If Not reconciliation.RightReconSource.IsLoaded Then LoadReconSource(ReconSource.SideName.Right)
 
-        _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation, True)
-        _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation, True)
+        _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation, ResultGroup.ResultSetType.Loaded)
+        _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation, ResultGroup.ResultSetType.Loaded)
     End Sub
 
     Public Sub LoadReconSource(side As ReconSource.SideName)
@@ -125,29 +132,6 @@ Partial Class MainWindow
         '                          ContinueWith(Sub() Test())
     End Sub
 
-    Private Sub DataGridRow_MouseRightButtonDown(sender As Object, e As MouseButtonEventArgs)
-        Dim dgr As DataGridRow = TryCast(sender, DataGridRow)
-        If dgr IsNot Nothing Then
-            Dim dr As DataRow = TryCast(dgr.Item.Row, DataRow)
-            If dr IsNot Nothing Then
-                'Using sql As New SQL
-                '    Dim dtTable As DataTable = Nothing
-                '    dtTable = sql.GetDataTable($"Select * From [dbo].[{_vm.Reconciliation.LeftReconSource.ReconTable}] Where [Txn ID] = '{dr.ItemArray(3)}' AND [GL ACCOUNT] = '{dr.ItemArray(4)}'")
-                '    If dtTable IsNot Nothing Then _vm.LeftSet = dtTable.AsDataView
-                '    dtTable = sql.GetDataTable($"Select * From [dbo].[{_vm.Reconciliation.RightReconSource.ReconTable}] Where [TxnID] = '{dr.ItemArray(5)}' AND [Account] = '{dr.ItemArray(6)}'")
-                '    If dtTable IsNot Nothing Then _vm.RightSet = dtTable.AsDataView
-                'End Using
-
-            End If
-        End If
-    End Sub
-
-    Private Sub DataGridRow_MouseDoubleClick(sender As Object, e As MouseButtonEventArgs)
-        Dim client As New Client
-        client.Show()
-        Me.Close()
-    End Sub
-
     Friend Sub ChangeReconciliation(rc As Reconciliation)
         If rc IsNot Nothing Then
             _vm.Reconciliation = rc
@@ -164,6 +148,7 @@ Partial Class MainWindow
     End Sub
 
     Private Sub Rekonate()
+
         Application.Current.Dispatcher.BeginInvoke(Sub()
                                                        Me.TopFlyout.IsOpen = False
                                                        Me.LeftFlyout.IsOpen = False
@@ -174,17 +159,15 @@ Partial Class MainWindow
         _vm.DifferResultGroup = New ResultGroup(ResultGroup.ResultGroupType.Differ)
         _vm.MatchResultGroup = New ResultGroup(ResultGroup.ResultGroupType.Match)
 
-        'If _left.Rows.Count = 0 Or _right.Rows.Count = 0 Then Exit Sub
-
         Using sql As New SQL
             sql.DropTables({"Left", "Right", "Match", "Differ"})
         End Using 'Have to close connection for drop table to happen
 
         'Order is important
-        _vm.MatchResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Match, _vm.Reconciliation)
-        _vm.DifferResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Differ, _vm.Reconciliation)
-        _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation)
-        _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation)
+        _vm.MatchResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Match, _vm.Reconciliation, ResultGroup.ResultSetType.Result)
+        _vm.DifferResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Differ, _vm.Reconciliation, ResultGroup.ResultSetType.Result)
+        _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation, ResultGroup.ResultSetType.Result)
+        _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation, ResultGroup.ResultSetType.Result)
         Application.Current.Dispatcher.BeginInvoke(Sub()
                                                        Dim tabControls As New List(Of TabControl)
                                                        Utility.GetLogicalChildCollection(Of TabControl)(Me, tabControls)
@@ -195,54 +178,160 @@ Partial Class MainWindow
 
     End Sub
 
-    Private Function GetResultGroup(resultSetName As ResultGroup.ResultGroupType, reconciliation As Reconciliation, Optional isSource As Boolean = False) As ResultGroup
-        Dim resultGroup As New ResultGroup(resultSetName)
+    Private Function GetResultGroup(resultGroupName As ResultGroup.ResultGroupType,
+                                    reconciliation As Reconciliation,
+                                    resultSetName As ResultGroup.ResultSetType,
+                                    Optional fromGroupName As ResultGroup.ResultGroupType = Nothing,
+                                    Optional selectedRow As DataRow = Nothing,
+                                    Optional columns As List(Of String) = Nothing) As ResultGroup
+
+        'Add or update a ResultSets
+
+        Dim resultGroup As New ResultGroup(resultGroupName)
         Dim sqlCmd As String = String.Empty
         Dim dtTable As DataTable = Nothing
-        Dim loadedResultSet As New ResultSet
-        Dim resultResultSet As New ResultSet
+        Dim resultSet As New ResultSet
 
-        Select Case resultSetName
+        Select Case resultGroupName
             Case ResultGroup.ResultGroupType.Left
-                If isSource Then
-                    sqlCmd = ReconSource.GetSelect(reconciliation.LeftReconSource)
-                Else
-                    sqlCmd = Reconciliation.GetLeftSelect(_vm.Reconciliation)
-                    loadedResultSet.ResultSetSQL = _vm.LeftResultGroup.ResultSets(ResultGroup.ResultSetType.Loaded).ResultSetSQL
-                    loadedResultSet.ResultSetDataView = _vm.LeftResultGroup.ResultSets(ResultGroup.ResultSetType.Loaded).ResultSetDataView
+                If _vm.LeftResultGroup IsNot Nothing Then
+                    resultGroup = _vm.LeftResultGroup
+                    _vm.LeftResultGroup = Nothing
                 End If
+                Select Case resultSetName
+                    Case ResultGroup.ResultSetType.Loaded
+                        sqlCmd = ReconSource.GetLoaded(reconciliation.LeftReconSource)
+                    Case ResultGroup.ResultSetType.Result
+                        sqlCmd = reconciliation.GetLeftRightResult(_vm.Reconciliation.LeftReconSource, resultGroupName)
+                    Case ResultGroup.ResultSetType.DrillDown
+                        sqlCmd = Reconciliation.GetLeftRightDrillDown(_vm.Reconciliation.LeftReconSource, resultGroupName, fromGroupName, selectedRow, columns)
+                End Select
             Case ResultGroup.ResultGroupType.Right
-                If isSource Then
-                    sqlCmd = ReconSource.GetSelect(reconciliation.RightReconSource)
-                Else
-                    sqlCmd = Reconciliation.GetRightSelect(_vm.Reconciliation)
-                    loadedResultSet.ResultSetSQL = _vm.RightResultGroup.ResultSets(ResultGroup.ResultSetType.Loaded).ResultSetSQL
-                    loadedResultSet.ResultSetDataView = _vm.RightResultGroup.ResultSets(ResultGroup.ResultSetType.Loaded).ResultSetDataView
+                If _vm.RightResultGroup IsNot Nothing Then
+                    resultGroup = _vm.RightResultGroup
+                    _vm.RightResultGroup = Nothing
                 End If
+                Select Case resultSetName
+                    Case ResultGroup.ResultSetType.Loaded
+                        sqlCmd = ReconSource.GetLoaded(reconciliation.RightReconSource)
+                    Case ResultGroup.ResultSetType.Result
+                        sqlCmd = reconciliation.GetLeftRightResult(_vm.Reconciliation.RightReconSource, resultGroupName)
+                    Case ResultGroup.ResultSetType.DrillDown
+                        sqlCmd = Reconciliation.GetLeftRightDrillDown(_vm.Reconciliation.RightReconSource, resultGroupName, fromGroupName, selectedRow, columns)
+                End Select
             Case ResultGroup.ResultGroupType.Differ
-                sqlCmd = Reconciliation.GetDifferSelect(_vm.Reconciliation)
+                If _vm.RightResultGroup IsNot Nothing Then
+                    resultGroup = _vm.DifferResultGroup
+                    _vm.DifferResultGroup = Nothing
+                End If
+                Select Case resultSetName
+                    Case ResultGroup.ResultSetType.Result
+                        sqlCmd = Reconciliation.GetDifferResult(_vm.Reconciliation)
+                    Case ResultGroup.ResultSetType.DrillDown
+                        sqlCmd = "tbd"
+                End Select
             Case ResultGroup.ResultGroupType.Match
-                sqlCmd = Reconciliation.GetMatchSelect(_vm.Reconciliation)
+                If _vm.MatchResultGroup IsNot Nothing Then
+                    resultGroup = _vm.MatchResultGroup
+                    _vm.MatchResultGroup = Nothing
+                End If
+                Select Case resultSetName
+                    Case ResultGroup.ResultSetType.Result
+                        sqlCmd = Reconciliation.GetMatchResult(_vm.Reconciliation)
+                    Case ResultGroup.ResultSetType.DrillDown
+                        sqlCmd = "tbd"
+                End Select
         End Select
-        Application.Message($"Getting results for {resultSetName.ToString}.")
+        Application.Message($"Getting results for {resultGroupName.ToString}:{resultSetName.ToString}.")
         Using sql As New SQL
             dtTable = sql.GetDataTable(sqlCmd)
         End Using
-        If dtTable IsNot Nothing Then
-            If isSource Then
-                loadedResultSet.ResultSetDataView = dtTable.AsDataView
-                loadedResultSet.ResultSetSQL = sqlCmd
-                loadedResultSet.ResultSetRecordCount = dtTable.Rows.Count
-            Else
-                resultResultSet.ResultSetDataView = dtTable.AsDataView
-                resultResultSet.ResultSetSQL = sqlCmd
-                resultResultSet.ResultSetRecordCount = dtTable.Rows.Count
-            End If
+        If dtTable Is Nothing Then dtTable = New DataTable
+
+        resultSet.ResultSetDataView = dtTable.AsDataView
+        resultSet.ResultSetSQL = sqlCmd
+        resultSet.ResultSetRecordCount = dtTable.Rows.Count
+
+        If resultGroup.ResultSets.ContainsKey(resultSetName) Then
+            resultGroup.ResultSets(resultSetName) = resultSet
+        Else
+            resultGroup.ResultSets.Add(resultSetName, resultSet)
         End If
-        resultGroup.ResultSets.Add(ResultGroup.ResultSetType.Loaded, loadedResultSet)
-        resultGroup.ResultSets.Add(ResultGroup.ResultSetType.Result, resultResultSet)
         Return resultGroup
     End Function
+    'Private Function GetResultGroup2(resultGroupName As ResultGroup.ResultGroupType,
+    '                                reconciliation As Reconciliation,
+    '                                resultSetName As ResultGroup.ResultSetType,
+    '                                Optional fromGroupName As ResultGroup.ResultGroupType = Nothing,
+    '                                Optional selectedRow As DataRow = Nothing,
+    '                                Optional columns As List(Of String) = Nothing) As ResultGroup
+
+    '    'Add or update one or more ResultSets for a ResultGroup
+
+    '    Dim resultGroup As New ResultGroup(resultGroupName)
+    '    Dim sqlCmd As String = String.Empty
+    '    Dim dtTable As DataTable = Nothing
+    '    Dim loadedResultSet As New ResultSet
+    '    Dim resultResultSet As New ResultSet
+    '    Dim drilldownResultSet As New ResultSet
+
+    '    'For Each rs As ResultSet In _vm.LeftResultGroup.ResultSets
+    '    '    Select Case rs.
+    '    'Next
+
+    '    Select Case resultGroupName
+    '        Case ResultGroup.ResultGroupType.Left
+    '            Select Case resultSetName
+    '                Case ResultGroup.ResultSetType.Loaded
+    '                    sqlCmd = ReconSource.GetSelect(reconciliation.LeftReconSource)
+    '                Case ResultGroup.ResultSetType.Result
+    '                    sqlCmd = Reconciliation.GetLeftSelect(_vm.Reconciliation)
+    '                    loadedResultSet.ResultSetSQL = _vm.LeftResultGroup.ResultSets(ResultGroup.ResultSetType.Loaded).ResultSetSQL
+    '                    loadedResultSet.ResultSetDataView = _vm.LeftResultGroup.ResultSets(ResultGroup.ResultSetType.Loaded).ResultSetDataView
+    '                Case ResultGroup.ResultSetType.DrillDown
+    '                    sqlCmd = Reconciliation.GetDrillDownSelect(_vm.Reconciliation, fromGroupName, selectedRow, columns)
+    '                    drilldownResultSet.ResultSetSQL = _vm.LeftResultGroup.ResultSets(ResultGroup.ResultSetType.DrillDown).ResultSetSQL
+    '                    drilldownResultSet.ResultSetDataView = _vm.LeftResultGroup.ResultSets(ResultGroup.ResultSetType.DrillDown).ResultSetDataView
+
+    '            End Select
+    '        Case ResultGroup.ResultGroupType.Right
+    '            If resultSetName = ResultGroup.ResultSetType.Loaded Then
+    '                sqlCmd = ReconSource.GetSelect(reconciliation.RightReconSource)
+    '            Else
+    '                sqlCmd = Reconciliation.GetRightSelect(_vm.Reconciliation)
+    '                loadedResultSet.ResultSetSQL = _vm.RightResultGroup.ResultSets(ResultGroup.ResultSetType.Loaded).ResultSetSQL
+    '                loadedResultSet.ResultSetDataView = _vm.RightResultGroup.ResultSets(ResultGroup.ResultSetType.Loaded).ResultSetDataView
+    '            End If
+    '        Case ResultGroup.ResultGroupType.Differ
+    '            sqlCmd = Reconciliation.GetDifferSelect(_vm.Reconciliation)
+    '        Case ResultGroup.ResultGroupType.Match
+    '            sqlCmd = Reconciliation.GetMatchSelect(_vm.Reconciliation)
+    '    End Select
+    '    Application.Message($"Getting results for {resultGroupName.ToString}:{resultSetName.ToString}.")
+    '    Using sql As New SQL
+    '        dtTable = sql.GetDataTable(sqlCmd)
+    '    End Using
+    '    If dtTable IsNot Nothing Then
+    '        Select Case resultSetName
+    '            Case ResultGroup.ResultSetType.Loaded
+    '                loadedResultSet.ResultSetDataView = dtTable.AsDataView
+    '                loadedResultSet.ResultSetSQL = sqlCmd
+    '                loadedResultSet.ResultSetRecordCount = dtTable.Rows.Count
+    '            Case ResultGroup.ResultSetType.Result
+    '                resultResultSet.ResultSetDataView = dtTable.AsDataView
+    '                resultResultSet.ResultSetSQL = sqlCmd
+    '                resultResultSet.ResultSetRecordCount = dtTable.Rows.Count
+    '            Case ResultGroup.ResultSetType.DrillDown
+    '                drilldownResultSet.ResultSetDataView = dtTable.AsDataView
+    '                drilldownResultSet.ResultSetSQL = sqlCmd
+    '                drilldownResultSet.ResultSetRecordCount = dtTable.Rows.Count
+    '        End Select
+    '    End If
+    '    resultGroup.ResultSets.Add(ResultGroup.ResultSetType.Loaded, loadedResultSet)
+    '    resultGroup.ResultSets.Add(ResultGroup.ResultSetType.Result, resultResultSet)
+    '    resultGroup.ResultSets.Add(ResultGroup.ResultSetType.DrillDown, drilldownResultSet)
+    '    Return resultGroup
+    'End Function
 
 
     Private Sub Configure(testName As String)
@@ -569,7 +658,7 @@ Partial Class MainWindow
             '_vm.Solution = Task.Run(Function() m.MockLoadSolutionAsync(1)).GetAwaiter().GetResult() 'Model for Solution
         End Using
 
-        _solutionPath = "C:\Users\Peter Grillo\Documents\dmr.rek"
+        _solutionPath = "C:\Users\Peter Grillo\Documents\dmr2.rek"
         LoadSolution()
     End Sub
 
