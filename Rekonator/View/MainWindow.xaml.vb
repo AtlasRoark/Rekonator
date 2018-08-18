@@ -54,10 +54,10 @@ Partial Class MainWindow
         End If
     End Sub
 
-    Friend Sub DillDownLoaded(resultGroupName As ResultGroup.ResultGroupType, dr As DataRow, columns As List(Of String))
+    Friend Sub DillDownRekonate(resultGroupName As ResultGroup.ResultGroupType, dr As DataRow, columns As List(Of String))
         _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation, ResultGroup.ResultSetType.DrillDown, resultGroupName, dr, columns)
         _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation, ResultGroup.ResultSetType.DrillDown, resultGroupName, dr, columns)
-
+        SelectTabs(ResultGroup.ResultSetType.DrillDown)
     End Sub
 
     Public Sub LoadReconSources(reconciliation As Reconciliation)
@@ -149,12 +149,7 @@ Partial Class MainWindow
 
     Private Sub Rekonate()
 
-        Application.Current.Dispatcher.BeginInvoke(Sub()
-                                                       Me.TopFlyout.IsOpen = False
-                                                       Me.LeftFlyout.IsOpen = False
-                                                       Me.RightFlyout.IsOpen = False
-                                                       Me.BottomFlyout.IsOpen = False
-                                                   End Sub)
+        CloseFlyouts()
 
         _vm.DifferResultGroup = New ResultGroup(ResultGroup.ResultGroupType.Differ)
         _vm.MatchResultGroup = New ResultGroup(ResultGroup.ResultGroupType.Match)
@@ -168,14 +163,44 @@ Partial Class MainWindow
         _vm.DifferResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Differ, _vm.Reconciliation, ResultGroup.ResultSetType.Result)
         _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation, ResultGroup.ResultSetType.Result)
         _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation, ResultGroup.ResultSetType.Result)
+
+        SelectTabs(ResultGroup.ResultSetType.Result)
+
+
+    End Sub
+
+    Private Sub SelectTabs(resultSetName As ResultGroup.ResultSetType)
         Application.Current.Dispatcher.BeginInvoke(Sub()
                                                        Dim tabControls As New List(Of TabControl)
                                                        Utility.GetLogicalChildCollection(Of TabControl)(Me, tabControls)
                                                        For Each tabControl As TabControl In tabControls
-                                                           tabControl.SelectedIndex = 1
+                                                           Dim resultGroupUserControl As ResultGroupUserControl = Utility.FindAncestor(tabControl, GetType(ResultGroupUserControl))
+                                                           Dim resultSetUserControl As ResultSetUserControl = Utility.FindAncestor(tabControl, GetType(ResultSetUserControl))
+                                                           Select Case resultSetName
+                                                               Case ResultGroup.ResultSetType.Result
+                                                                   If resultGroupUserControl IsNot Nothing Then
+                                                                       tabControl.SelectedIndex = 1 'Result
+                                                                   End If
+                                                               Case ResultGroup.ResultSetType.DrillDown
+                                                                   If resultGroupUserControl IsNot Nothing Then
+                                                                       tabControl.SelectedIndex = 2 'Drilldown
+                                                                   End If
+                                                                   If resultSetUserControl IsNot Nothing Then
+                                                                       tabControl.SelectedIndex = 0 'Data
+
+                                                                   End If
+                                                           End Select
                                                        Next
                                                    End Sub)
+    End Sub
 
+    Private Sub CloseFlyouts()
+        Application.Current.Dispatcher.BeginInvoke(Sub()
+                                                       Me.TopFlyout.IsOpen = False
+                                                       Me.LeftFlyout.IsOpen = False
+                                                       Me.RightFlyout.IsOpen = False
+                                                       Me.BottomFlyout.IsOpen = False
+                                                   End Sub)
     End Sub
 
     Private Function GetResultGroup(resultGroupName As ResultGroup.ResultGroupType,
@@ -202,7 +227,7 @@ Partial Class MainWindow
                     Case ResultGroup.ResultSetType.Loaded
                         sqlCmd = ReconSource.GetLoaded(reconciliation.LeftReconSource)
                     Case ResultGroup.ResultSetType.Result
-                        sqlCmd = reconciliation.GetLeftRightResult(_vm.Reconciliation.LeftReconSource, resultGroupName)
+                        sqlCmd = Reconciliation.GetLeftRightResult(_vm.Reconciliation.LeftReconSource, resultGroupName)
                     Case ResultGroup.ResultSetType.DrillDown
                         sqlCmd = Reconciliation.GetLeftRightDrillDown(_vm.Reconciliation.LeftReconSource, resultGroupName, fromGroupName, selectedRow, columns)
                 End Select
@@ -215,7 +240,7 @@ Partial Class MainWindow
                     Case ResultGroup.ResultSetType.Loaded
                         sqlCmd = ReconSource.GetLoaded(reconciliation.RightReconSource)
                     Case ResultGroup.ResultSetType.Result
-                        sqlCmd = reconciliation.GetLeftRightResult(_vm.Reconciliation.RightReconSource, resultGroupName)
+                        sqlCmd = Reconciliation.GetLeftRightResult(_vm.Reconciliation.RightReconSource, resultGroupName)
                     Case ResultGroup.ResultSetType.DrillDown
                         sqlCmd = Reconciliation.GetLeftRightDrillDown(_vm.Reconciliation.RightReconSource, resultGroupName, fromGroupName, selectedRow, columns)
                 End Select

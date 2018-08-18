@@ -53,6 +53,19 @@ Public Class Reconciliation
         _sb.AppendLine("--Use Rekonator")
 
         If isAgg Then
+            Dim isFirst As Boolean = True
+            _sb.AppendLine($"SELECT * FROM {reconSouce.ReconTable} x WHERE ")
+            For Each agg As Aggregate In reconSouce.Aggregations
+                For Each gbc In agg.GroupByColumns
+                    Dim colIdx As Integer = columns.FindIndex(Function(f) f.Equals($"{reconSouce.ColumnPrefix}{gbc}"))
+                    Dim value As String = String.Empty
+                    If colIdx >= 0 Then value = selectedRow.ItemArray(colIdx)
+                    _sb.AppendLine($"{IIf(isFirst, "", "AND ")} x.[{reconSouce.ColumnPrefix}{gbc}] = '{value}'")
+                    isFirst = False
+                Next
+            Next
+            'b.[b-Dataset Folder]= And b.[b-Category] And b.[b-KPI] ")
+
         Else
             Dim colIdx As Integer = columns.FindIndex(Function(f) f.Equals($"id{aorb.ToUpper}"))
             Dim value As String = String.Empty
@@ -101,14 +114,14 @@ Public Class Reconciliation
         _sb.AppendLine($"FROM {aTable}, {bTable}")
         _sb.AppendLine("WHERE")
         _sb.AppendLine(MakeWhereComparision(recon.CompletenessComparisions, recon.LeftReconSource.ColumnPrefix, recon.RightReconSource.ColumnPrefix))
-        _sb.Append("AND ")
+        _sb.Append("And ")
         _sb.AppendLine(MakeWhereComparision(recon.MatchingComparisions, recon.LeftReconSource.ColumnPrefix, recon.RightReconSource.ColumnPrefix))
 
         If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) And Not isAggA Then
-            _sb.AppendLine($"AND {recon.LeftReconSource.WhereClause.Replace("x!", "a")}")
+            _sb.AppendLine($"And {recon.LeftReconSource.WhereClause.Replace("x!", "a")}")
         End If
         If Not String.IsNullOrWhiteSpace(recon.RightReconSource.WhereClause) And Not isAggB Then
-            _sb.AppendLine($"AND {recon.RightReconSource.WhereClause.Replace("x!", "b")}")
+            _sb.AppendLine($"And {recon.RightReconSource.WhereClause.Replace("x!", "b")}")
         End If
 
         _sb.AppendLine()
@@ -275,20 +288,9 @@ Public Class Reconciliation
     End Function
 
     Private Shared Function MakeGroupByColumns(groupbycols As String(), aorb As String, Optional prefix As String = "", Optional isLeadingComma As Boolean = False)
-        'If Not String.IsNullOrEmpty(aorb) Then aorb += "."
-        'Dim isFirst As Boolean = True
-
         Return IIf(isLeadingComma, ",", String.Empty) + String.Join(",", groupbycols.ToList().Select(Function(s) $"{aorb}.[{prefix}{s}]"))
-        'Dim gb As New StringBuilder
-        'For Each gbc In groupbycols
-        'If Not isFirst Then
-        'gb.Append(",")
-        'End If
-        'gb.AppendLine($"{aorb}.[{gbc}]")
-        'isFirst = False
-        'Next
-        'Return gb.ToString
     End Function
+
     Public Shared Function GetLeftRightResult(reconSouce As ReconSource, resultGroupName As ResultGroup.ResultGroupType) As String
         Dim isAgg As Boolean = (reconSouce.Aggregations IsNot Nothing)
         Dim prefix As String = reconSouce.ColumnPrefix

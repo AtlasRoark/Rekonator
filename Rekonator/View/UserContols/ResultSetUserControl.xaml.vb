@@ -53,7 +53,7 @@ Partial Public Class ResultSetUserControl
         If mainWindow Is Nothing Then Exit Sub
 
         Dim columns As List(Of String) = dg.Columns.Select(Function(s) s.Header.ToString).ToList
-        mainWindow.DillDownLoaded(rguc.ResultGroup.ResultGroupName, dr, columns)
+        mainWindow.DillDownRekonate(rguc.ResultGroup.ResultGroupName, dr, columns)
     End Sub
 
     Private Sub DataGridCell_PreviewKeyDown(sender As Object, e As KeyEventArgs)
