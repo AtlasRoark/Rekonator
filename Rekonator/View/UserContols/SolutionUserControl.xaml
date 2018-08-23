@@ -13,7 +13,7 @@
         <local:ComparisionToTextConverter x:Key="ComparisionToTextConverter" />
     </UserControl.Resources>
     <Grid  HorizontalAlignment="Center"
-           Margin="50">
+           Margin="10,60,10,0">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="3*" />
             <ColumnDefinition Width="10" />
@@ -43,7 +43,7 @@
         <ComboBox Grid.Row="1"
                   Grid.Column="2"
                   Name="CBReconciliation" IsEditable="True"
-                  SelectionChanged="CBReconciliation_SelectionChanged"
+                  SelectionChanged="CBReconciliation_SelectionChanged" LostFocus="CBReconciliation_LostFocus"
                   Foreground="Black"
                   FontSize="13"
                   ItemsSource="{Binding Reconciliations}" IsSynchronizedWithCurrentItem="True"

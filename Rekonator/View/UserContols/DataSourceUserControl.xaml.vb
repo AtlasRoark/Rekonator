@@ -92,8 +92,8 @@
                         textbox.Text = textbox.Text + vbCrLf
                     Else
                         Dim clipBoardData As String = Clipboard.GetData(DataFormats.UnicodeText)
-                        If textbox.SelectedText Is Nothing Then
-                            textbox.Text.Insert(textbox.CaretIndex, clipBoardData)
+                        If textbox.SelectedText Is Nothing OrElse textbox.SelectedText = "" Then
+                            textbox.Text=textbox.Text.Insert(textbox.CaretIndex, clipBoardData)
                         Else
                             textbox.Text = textbox.Text.Replace(textbox.SelectedText, clipBoardData)
 

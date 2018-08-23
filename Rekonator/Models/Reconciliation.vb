@@ -15,6 +15,13 @@ Public Class Reconciliation
     Private Shared _sb As New StringBuilder
 
     Public Shared Reconciliations As New List(Of Reconciliation)
+
+    Public Sub New()
+    End Sub
+    Public Sub New(reconciliationName As String)
+        Me.ReconciliationName = reconciliationName
+    End Sub
+
     Public Shared Sub Add(reconciliationName As String,
                           leftDataSource As ReconSource,
                           rightDataSource As ReconSource,
@@ -46,7 +53,7 @@ Public Class Reconciliation
                                               selectedRow As DataRow,
                                               columns As List(Of String)) As String
 
-        Dim isAgg As Boolean = (reconSouce.Aggregations IsNot Nothing)
+        Dim isAgg As Boolean = (reconSouce.Aggregations IsNot Nothing AndAlso reconSouce.Aggregations.Count > 0)
         Dim aorb As String = IIf(targetResultGroupName = ResultGroup.ResultGroupType.Left, "a", "b")
 
         _sb.Clear()
@@ -81,7 +88,7 @@ Public Class Reconciliation
         _sb.AppendLine("--Use Rekonator")
 
         Dim cteTable As String = String.Empty
-        Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing)
+        Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing AndAlso recon.LeftReconSource.Aggregations.Count > 0)
         Dim aTable As String = $"[dbo].[{recon.LeftReconSource.ReconTable}] a"
         If isAggA Then
             cteTable = $"cte_{recon.LeftReconSource.ReconTable}_grp"
@@ -89,7 +96,7 @@ Public Class Reconciliation
             aTable = $"{cteTable} a"
             isFirst = False
         End If
-        Dim isAggB As Boolean = (recon.RightReconSource.Aggregations IsNot Nothing)
+        Dim isAggB As Boolean = (recon.RightReconSource.Aggregations IsNot Nothing AndAlso recon.RightReconSource.Aggregations.Count > 0)
         Dim bTable As String = $"[dbo].[{recon.RightReconSource.ReconTable}] b"
         If isAggB Then
             cteTable = $"cte_{recon.RightReconSource.ReconTable}_grp"
@@ -117,12 +124,12 @@ Public Class Reconciliation
         _sb.Append("And ")
         _sb.AppendLine(MakeWhereComparision(recon.MatchingComparisions, recon.LeftReconSource.ColumnPrefix, recon.RightReconSource.ColumnPrefix))
 
-        If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) And Not isAggA Then
-            _sb.AppendLine($"And {recon.LeftReconSource.WhereClause.Replace("x!", "a")}")
-        End If
-        If Not String.IsNullOrWhiteSpace(recon.RightReconSource.WhereClause) And Not isAggB Then
-            _sb.AppendLine($"And {recon.RightReconSource.WhereClause.Replace("x!", "b")}")
-        End If
+        'If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) And Not isAggA Then
+        '    _sb.AppendLine($"And {recon.LeftReconSource.WhereClause.Replace("x!", "a")}")
+        'End If
+        'If Not String.IsNullOrWhiteSpace(recon.RightReconSource.WhereClause) And Not isAggB Then
+        '    _sb.AppendLine($"And {recon.RightReconSource.WhereClause.Replace("x!", "b")}")
+        'End If
 
         _sb.AppendLine()
         _sb.AppendLine("SELECT * FROM [Match]")
@@ -144,7 +151,7 @@ Public Class Reconciliation
         _sb.AppendLine("--Use Rekonator")
 
         Dim cteTable As String = String.Empty
-        Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing)
+        Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing AndAlso recon.LeftReconSource.Aggregations.Count > 0)
         Dim aTable As String = $"[dbo].[{recon.LeftReconSource.ReconTable}] a"
         If isAggA Then
             cteTable = $"cte_{recon.LeftReconSource.ReconTable}_grp"
@@ -152,7 +159,7 @@ Public Class Reconciliation
             aTable = $"{cteTable} a"
             isFirst = False
         End If
-        Dim isAggB As Boolean = (recon.RightReconSource.Aggregations IsNot Nothing)
+        Dim isAggB As Boolean = (recon.RightReconSource.Aggregations IsNot Nothing AndAlso recon.RightReconSource.Aggregations.Count > 0)
         Dim bTable As String = $"[dbo].[{recon.RightReconSource.ReconTable}] b"
         If isAggB Then
             cteTable = $"cte_{recon.RightReconSource.ReconTable}_grp"
@@ -203,12 +210,12 @@ Public Class Reconciliation
         _sb.AppendLine(MakeWhereComparision(recon.CompletenessComparisions, recon.LeftReconSource.ColumnPrefix, recon.RightReconSource.ColumnPrefix))
 
 
-        If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) And Not isAggA Then
-            _sb.AppendLine($"AND {recon.LeftReconSource.WhereClause.Replace("x!", "a")}")
-        End If
-        If Not String.IsNullOrWhiteSpace(recon.RightReconSource.WhereClause) And Not isAggB Then
-            _sb.AppendLine($"AND {recon.RightReconSource.WhereClause.Replace("x!", "b")}")
-        End If
+        'If Not String.IsNullOrWhiteSpace(recon.LeftReconSource.WhereClause) And Not isAggA Then
+        '    _sb.AppendLine($"AND {recon.LeftReconSource.WhereClause.Replace("x!", "a")}")
+        'End If
+        'If Not String.IsNullOrWhiteSpace(recon.RightReconSource.WhereClause) And Not isAggB Then
+        '    _sb.AppendLine($"AND {recon.RightReconSource.WhereClause.Replace("x!", "b")}")
+        'End If
         If isAggA Then
             _sb.AppendLine("AND")
             _sb.AppendLine(MakeNotExists1(recon.LeftReconSource, "Match", "a", recon.LeftReconSource.ColumnPrefix))
@@ -277,9 +284,9 @@ Public Class Reconciliation
                 End If
             Next
             sb.AppendLine($"FROM [dbo].[{reconSource.ReconTable}] {aorb}")
-            If Not String.IsNullOrWhiteSpace(reconSource.WhereClause) Then
-                sb.AppendLine($"WHERE {reconSource.WhereClause.Replace("x!", aorb)}")
-            End If
+            'If Not String.IsNullOrWhiteSpace(reconSource.WhereClause) Then
+            '    sb.AppendLine($"WHERE {reconSource.WhereClause.Replace("x!", aorb)}")
+            'End If
             sb.AppendLine("GROUP BY ")
             sb.AppendLine(MakeGroupByColumns(agg.GroupByColumns, aorb, prefix))
             sb.AppendLine(")")
@@ -292,7 +299,7 @@ Public Class Reconciliation
     End Function
 
     Public Shared Function GetLeftRightResult(reconSouce As ReconSource, resultGroupName As ResultGroup.ResultGroupType) As String
-        Dim isAgg As Boolean = (reconSouce.Aggregations IsNot Nothing)
+        Dim isAgg As Boolean = (reconSouce.Aggregations IsNot Nothing AndAlso reconSouce.Aggregations.Count > 0)
         Dim prefix As String = reconSouce.ColumnPrefix
         Dim aorb As String = IIf(resultGroupName = ResultGroup.ResultGroupType.Left, "a", "b")
         Dim lorr As String = IIf(resultGroupName = ResultGroup.ResultGroupType.Left, "[Left]", "[Right]")
@@ -309,10 +316,10 @@ Public Class Reconciliation
             _sb.AppendLine($"INTO {lorr}")
             _sb.AppendLine($"FROM [dbo].[{reconSouce.ReconTable}] {aorb}")
             _sb.AppendLine("WHERE")
-            If Not String.IsNullOrWhiteSpace(reconSouce.WhereClause) Then
-                _sb.AppendLine($"{reconSouce.WhereClause.Replace("x!.", $"{aorb}.")}")
-                _sb.AppendLine("AND")
-            End If
+            'If Not String.IsNullOrWhiteSpace(reconSouce.WhereClause) Then
+            '    _sb.AppendLine($"{reconSouce.WhereClause.Replace("x!.", $"{aorb}.")}")
+            '    _sb.AppendLine("AND")
+            'End If
             _sb.AppendLine(MakeNotExists1(reconSouce, "Match", aorb, prefix))
             _sb.AppendLine("AND")
             _sb.AppendLine(MakeNotExists1(reconSouce, "Differ", aorb, prefix))
@@ -330,9 +337,9 @@ Public Class Reconciliation
             _sb.AppendLine($"NOT EXISTS (SELECT * FROM [Differ] d WHERE d.Id{aorb.ToUpper} = {aorb}.rekonid)")
             _sb.AppendLine()
             _sb.AppendLine($"SELECT * FROM {lorr} {aorb}")
-            If Not String.IsNullOrWhiteSpace(reconSouce.WhereClause) Then
-                _sb.AppendLine($"WHERE {reconSouce.WhereClause.Replace("x!.", $"{aorb}.")}")
-            End If
+            'If Not String.IsNullOrWhiteSpace(reconSouce.WhereClause) Then
+            '    _sb.AppendLine($"WHERE {reconSouce.WhereClause.Replace("x!.", $"{aorb}.")}")
+            'End If
         End If
         Return _sb.ToString
     End Function
@@ -342,8 +349,8 @@ Public Class Reconciliation
         Dim isFirst As Boolean = True
         Dim sb As New StringBuilder 'don't use _sb
         Dim mord As String = Left(tableName, 1).ToLower
-        Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing)
-        Dim isAggB As Boolean = (recon.RightReconSource.Aggregations IsNot Nothing)
+        Dim isAggA As Boolean = (recon.LeftReconSource.Aggregations IsNot Nothing AndAlso recon.LeftReconSource.Aggregations.Count > 0)
+        Dim isAggB As Boolean = (recon.RightReconSource.Aggregations IsNot Nothing AndAlso recon.RightReconSource.Aggregations.Count > 0)
 
         sb.Append($"NOT EXISTS (SELECT * FROM [{tableName}] {mord} WHERE ")
         isFirst = True

@@ -35,7 +35,7 @@ Public Class ComparisionToTextConverter
 
     Public Function ConvertBack(value As Object, targetType As Type, parameter As Object, culture As CultureInfo) As Object Implements IValueConverter.ConvertBack
         Dim compText As String = TryCast(value, String)
-        If compText Is Nothing Then
+        If String.IsNullOrEmpty(compText) Then
             Return Nothing
         Else
             Dim comparisions = New List(Of Comparision)

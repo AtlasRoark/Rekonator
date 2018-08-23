@@ -54,6 +54,14 @@ Partial Class MainWindow
         End If
     End Sub
 
+    Friend Sub AddReconciliation(reconciliationName As String)
+        If _vm.Reconciliations(0).ReconciliationName.StartsWith("(New") Then
+            _vm.Reconciliations(0).ReconciliationName = reconciliationName
+        Else
+            _vm.Solution.Reconciliations.Add(New Reconciliation(reconciliationName))
+        End If
+    End Sub
+
     Friend Sub DillDownRekonate(resultGroupName As ResultGroup.ResultGroupType, dr As DataRow, columns As List(Of String))
         _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation, ResultGroup.ResultSetType.DrillDown, resultGroupName, dr, columns)
         _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation, ResultGroup.ResultSetType.DrillDown, resultGroupName, dr, columns)
@@ -61,12 +69,13 @@ Partial Class MainWindow
     End Sub
 
     Public Sub LoadReconSources(reconciliation As Reconciliation)
+        If _vm.Reconciliation IsNot Nothing Then
+            If Not reconciliation.LeftReconSource.IsLoaded Then LoadReconSource(ReconSource.SideName.Left)
+            If Not reconciliation.RightReconSource.IsLoaded Then LoadReconSource(ReconSource.SideName.Right)
 
-        If Not reconciliation.LeftReconSource.IsLoaded Then LoadReconSource(ReconSource.SideName.Left)
-        If Not reconciliation.RightReconSource.IsLoaded Then LoadReconSource(ReconSource.SideName.Right)
-
-        _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation, ResultGroup.ResultSetType.Loaded)
-        _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation, ResultGroup.ResultSetType.Loaded)
+            _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation, ResultGroup.ResultSetType.Loaded)
+            _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation, ResultGroup.ResultSetType.Loaded)
+        End If
     End Sub
 
     Public Sub LoadReconSource(side As ReconSource.SideName)
@@ -112,6 +121,13 @@ Partial Class MainWindow
             End If
         End If
         _vm.Reconciliation = _vm.Reconciliation 'Trigger OnPropChange incase parameters were updated
+        If side = ReconSource.SideName.Left Then
+            _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation, ResultGroup.ResultSetType.Loaded)
+        End If
+        If side = ReconSource.SideName.Right Then
+            _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation, ResultGroup.ResultSetType.Loaded)
+        End If
+
     End Sub
 
 
@@ -571,8 +587,9 @@ Partial Class MainWindow
                     {.ReconDataSource = excelDS,
                     .ReconTable = "stinvoice",
                     .IsLoaded = True,
-                    .Parameters = excelParams,
-                    .WhereClause = "NOT (ISNULL(x!.[ExportId], '')='' OR x!.[ExportId]='0')"}
+                    .Parameters = excelParams
+                    }
+                '.WhereClause = "NOT (ISNULL(x!.[ExportId], '')='' OR x!.[ExportId]='0')"}
 
                 excelParams = New List(Of Parameter)
                 excelParams.AddParameter("FilePath", "C:\Users\Peter Grillo\Downloads\March Activity.xls")
@@ -581,8 +598,9 @@ Partial Class MainWindow
                     {.ReconDataSource = excelDS,
                     .ReconTable = "qbinvoice",
                     .IsLoaded = True,
-                    .Parameters = excelParams,
-                    .WhereClause = "NOT (ISNULL(x!.[SubTotal], '')='' OR x!.[SubTotal]='0')"}
+                    .Parameters = excelParams
+                    }
+                '.WhereClause = "NOT (ISNULL(x!.[SubTotal], '')='' OR x!.[SubTotal]='0')"}
 
                 completenessComparisions.Add(New Comparision With {.LeftColumn = "QB Export ID", .RightColumn = "TxnId", .ComparisionTest = ComparisionType.TextCaseEquals})
                 matchingComparisions.Add(New Comparision With {.LeftColumn = "Total", .RightColumn = "Subtotal", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
@@ -601,9 +619,9 @@ Partial Class MainWindow
                     .ReconTable = "aggbalance",
                     .IsLoaded = False,
                     .Parameters = excelParams,
-                    .WhereClause = "ISNULL(x!.[Balance], 0) <> 0",
                     .Columns = columns
                 }
+                '.WhereClause = "ISNULL(x!.[Balance], 0) <> 0",
 
                 'Right
                 aggOps = New List(Of AggregateOperation)
@@ -625,9 +643,9 @@ Partial Class MainWindow
                     .IsLoaded = False,
                     .Parameters = excelParams,
                     .Aggregations = aggregates,
-                    .WhereClause = "ISNULL(x!.[Entry], 0) <> 0",
                     .Columns = columns
                 }
+                '.WhereClause = "ISNULL(x!.[Entry], 0) <> 0",
 
                 completenessComparisions.Add(New Comparision With {.LeftColumn = "Customer ID", .RightColumn = "Customer ID", .ComparisionTest = ComparisionType.NumberEquals})
                 matchingComparisions.Add(New Comparision With {.LeftColumn = "Balance", .RightColumn = "EntryTotal", .Percision = 2, .ComparisionTest = ComparisionType.NumberEquals})
@@ -683,7 +701,7 @@ Partial Class MainWindow
             '_vm.Solution = Task.Run(Function() m.MockLoadSolutionAsync(1)).GetAwaiter().GetResult() 'Model for Solution
         End Using
 
-        _solutionPath = "C:\Users\Peter Grillo\Documents\dmr2.rek"
+        _solutionPath = "C:\Users\Peter Grillo\Documents\dmr SQL.rek"
         LoadSolution()
     End Sub
 

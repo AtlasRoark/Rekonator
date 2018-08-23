@@ -183,7 +183,7 @@
                      Grid.Column="1"
                      Text="{Binding ReconSource.ColumnPrefix}" />
 
-            <TextBlock Grid.Row="7"
+            <!--<TextBlock Grid.Row="7"
                        Grid.Column="0"
                        Grid.ColumnSpan="2"
                        Text="Apply Where Clause"
@@ -196,7 +196,7 @@
                      TextAlignment="Left"
                      FontFamily="{StaticResource SourceSans}"
                      FontSize="14"
-                     Text="{Binding ReconSource.WhereClause}" />
+                     Text="{Binding ReconSource.WhereClause}" />-->
 
             <TextBlock Grid.Row="9"
                        Grid.Column="0"

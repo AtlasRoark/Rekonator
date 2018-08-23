@@ -7,16 +7,16 @@ Public Class ReconSource
     Property IsLoaded As Boolean
     Property Parameters As New List(Of Parameter)
     Property LoadedSet As DataTable
-    Property WhereClause As String = String.Empty
-    Property ColumnPrefix As String
+    'Property WhereClause As String = String.Empty
+    Property ColumnPrefix As String = String.Empty
     Property Columns As New List(Of Column)
     Property Aggregations As New List(Of Aggregate)
 
     Public Shared Function GetLoaded(reconSource As ReconSource) As String
         Dim selectCommand As String = $"SELECT * FROM {reconSource.ReconTable} x"
-        If Not String.IsNullOrWhiteSpace(reconSource.WhereClause) Then
-            selectCommand += $" WHERE {reconSource.WhereClause.Replace("x!.", "x.")}"
-        End If
+        'If Not String.IsNullOrWhiteSpace(reconSource.WhereClause) Then
+        '    selectCommand += $" WHERE {reconSource.WhereClause.Replace("x!.", "x.")}"
+        'End If
         Return selectCommand
     End Function
     Public Enum SideName
