@@ -161,10 +161,6 @@ Public Class SQL
         End Try
     End Function
 
-    Friend Function GetFromCommandPath(commandPath As String) As String
-        Return My.Computer.FileSystem.ReadAllText(commandPath, Encoding.UTF8)
-    End Function
-
     Private Sub OpenConnection()
         Try
             _connection = New SqlConnection(Application.ConnectionString)

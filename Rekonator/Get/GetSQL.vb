@@ -27,11 +27,7 @@ Public Class GetSQL
                     commandText = commandText.Insert(commandText.Length - 1, ", rekonid int IDENTITY(1,1)")
                     rekonConnection.ExecuteNonQuery(commandText)
 
-                    If reconSource.Parameters.IsExist("commandtext") Then
-                        commandText = reconSource.Parameters.GetParameter("commandtext")
-                    Else
-                        commandText = rekonConnection.GetFromCommandPath(reconSource.Parameters.GetParameter("commandpath"))
-                    End If
+                    commandText = GetCommandText(reconSource)
                     Using selectCommand As New SqlCommand(commandText, sourceConnection)
 
                         Dim sqlParams As SqlParameter() = MakeParameters(reconSource, fromDate, toDate)
@@ -84,16 +80,113 @@ Public Class GetSQL
                         Case "datetime"
                             sqlDbType = Data.SqlDbType.DateTime
                     End Select
-                    If parts(2).ToString.ToLower = "{from}" Then parts(2) = fromDate
-                    If parts(2).ToString.ToLower = "{to}" Then parts(2) = toDate
-                    If parts(2).ToString.ToLower = "null" Then parts(2) = String.Empty
+                    Dim paramValue As New Object
+                    If parts(2).ToString.ToLower = "{from}" Then paramValue = fromDate
+                    If parts(2).ToString.ToLower = "{to}" Then paramValue = toDate
+                    If parts(2).ToString.ToLower = "null" Then paramValue = DBNull.Value
 
-                    Dim param As New SqlParameter With {.ParameterName = parts(0), .SqlDbType = sqlDbType, .Value = parts(2)}
+                    Dim param As New SqlParameter With {.ParameterName = parts(0), .SqlDbType = sqlDbType, .Value = paramValue}
                     params.Add(param)
                 End If
             Next
         End If
         Return params.ToArray
+    End Function
+
+    Public Function GetDrillDown(reconciliation As Reconciliation) As DataSet
+        Try
+            Dim dtA As DataTable = GetDrillDownGroup(reconciliation, ResultGroup.ResultGroupType.Left)
+            Dim dtB As DataTable = GetDrillDownGroup(reconciliation, ResultGroup.ResultGroupType.Right)
+
+            Dim dsDrillDown As New DataSet
+
+            Dim qMatch = From a In dtA.AsEnumerable
+                         Join b In dtB.AsEnumerable On a(0) Equals b(0)
+                         Select a
+            dsDrillDown.Tables.Add(qMatch.CopyToDataTable())
+
+            Dim qDiff1 = From a In dtA.AsEnumerable
+                         Group Join b In dtB.AsEnumerable On a(0) Equals b(0)
+                        Into Group
+                         Where Group.FirstOrDefault Is Nothing
+                         Select a
+            Dim qDiff2 = From b In dtB.AsEnumerable
+                         Group Join a In dtA.AsEnumerable On a(0) Equals b(0)
+                        Into Group
+                         Where Group.FirstOrDefault Is Nothing
+                         Select b
+
+            dsDrillDown.Tables.Add(qDiff1.Union(qDiff2).CopyToDataTable())
+
+            Return dsDrillDown
+        Catch ex As Exception
+            Application.ErrorMessage($"Error Getting DrillDown for: {ex.Message}")
+        End Try
+        Return Nothing
+    End Function
+
+    Private Function GetDrillDownGroup(reconciliation As Reconciliation, resultGroupName As ResultGroup.ResultGroupType) As DataTable
+        Try
+            Dim reconSource As ReconSource = IIf(resultGroupName = ResultGroup.ResultGroupType.Left, reconciliation.LeftReconSource, reconciliation.RightReconSource)
+            Using sourceConnection = New SqlConnection(reconSource.Parameters.GetParameter("connectionstring"))
+                Using rekonConnection As New SQL()
+                    Dim commandText As String = String.Empty
+
+                    sourceConnection.Open()
+
+                    commandText = GetCommandText(reconSource, "DCR_NoClubVisits")
+
+                    Using selectCommand As New SqlCommand(commandText, sourceConnection)
+
+                        Dim sqlParams As SqlParameter() = MakeParameters(reconSource, reconciliation.FromDate, reconciliation.ToDate)
+                        If sqlParams IsNot Nothing Then
+                            selectCommand.Parameters.AddRange(sqlParams)
+                        End If
+                        Application.Message($"Loading Match DrillDown")
+
+                        Dim da = New SqlDataAdapter(selectCommand)
+                        Dim dt = New DataTable
+                        da.Fill(dt)
+                        If dt.Rows.Count <> 0 Then
+                            Return dt
+                        Else
+                            Return Nothing
+                        End If
+                    End Using
+                End Using
+            End Using
+
+            Return Nothing
+        Catch ex As Exception
+            Application.ErrorMessage($"Error Getting DrillDown Group{resultGroupName}: {ex.Message}")
+        End Try
+    End Function
+
+    Private Shared Function GetCommandText(reconSource As ReconSource, Optional extractTag As String = "") As String
+        Dim commandText As String = String.Empty
+
+        If reconSource.Parameters.IsExist("commandtext") Then
+            commandText = reconSource.Parameters.GetParameter("commandtext")
+        Else
+            commandText = GetFromCommandPath(reconSource.Parameters.GetParameter("commandpath"))
+        End If
+
+        If Not String.IsNullOrWhiteSpace(extractTag) Then
+            Dim extractText As String = String.Empty
+            Dim rxExtract = New RegularExpressions.Regex($"(\/\* Rekon \[{extractTag}\])(.+?)(Rekon End \*\/)", RegularExpressions.RegexOptions.Singleline Or RegularExpressions.RegexOptions.Multiline)
+            Dim rxMatches As RegularExpressions.MatchCollection = rxExtract.Matches(commandText)
+            For Each rxMatch In rxMatches
+                'Dim matchText As String = rxExtract.Match(commandText).Value
+                'matchText = matchText.Substring(extractText.IndexOf(vbCrLf) + 1)
+                'matchText = matchText.Replace("Rekon End", "")
+                'matchText = matchText.Replace("*/", "")
+                Dim matchLines As String() = Split(rxMatch.value, vbNewLine)
+                extractText += $"/* Rekon [{extractTag}] */{vbNewLine}"
+                extractText += String.Join(vbNewLine, matchLines, 1, matchLines.Length - 2) + vbNewLine
+            Next
+            commandText = extractText
+        End If
+        Return commandText
     End Function
 
     Private Function TransposeResult(reconSource As ReconSource) As Boolean
@@ -127,7 +220,9 @@ Public Class GetSQL
         Return True
     End Function
 
-
+    Private Shared Function GetFromCommandPath(commandPath As String) As String
+        Return My.Computer.FileSystem.ReadAllText(commandPath, Encoding.UTF8)
+    End Function
 
     '    var mergeQuery = "INSERT INTO table2(id, name, adresse) SELECT * FROM #t WHERE #t.id NOT IN(SELECT id FROM table2)";
     '    Using (var mergeCommand = New SqlCommand(mergeQuery, destinationConnection))

@@ -82,6 +82,7 @@ Public Class Reconciliation
         Return _sb.ToString
     End Function
 
+
     Public Shared Function GetMatchResult(recon As Reconciliation) As String
         Dim isFirst As Boolean = True
         _sb.Clear()
@@ -343,6 +344,8 @@ Public Class Reconciliation
         End If
         Return _sb.ToString
     End Function
+
+
 
     Private Shared Function MakeNotExists2(recon As Reconciliation, tableName As String, aorb As String) As String
         'use aorb.  a for left, b for right.  don't use isggA or isggB since left won't have b alias and right won't have a alias

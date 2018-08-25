@@ -62,11 +62,51 @@ Partial Class MainWindow
         End If
     End Sub
 
-    Friend Sub DillDownRekonate(resultGroupName As ResultGroup.ResultGroupType, dr As DataRow, columns As List(Of String))
+    Friend Sub DrillDownRekonate(resultGroupName As ResultGroup.ResultGroupType, dr As DataRow, columns As List(Of String))
         _vm.LeftResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Left, _vm.Reconciliation, ResultGroup.ResultSetType.DrillDown, resultGroupName, dr, columns)
         _vm.RightResultGroup = GetResultGroup(ResultGroup.ResultGroupType.Right, _vm.Reconciliation, ResultGroup.ResultSetType.DrillDown, resultGroupName, dr, columns)
+
+        Dim dsDrillDown As DataSet = Nothing
+        Using getsql As New GetSQL
+            dsDrillDown = getsql.GetDrillDown(_vm.Reconciliation)
+        End Using
+
+        _vm.MatchResultGroup = GetDrillDownResultGroup(dsDrillDown, ResultGroup.ResultGroupType.Match)
+        _vm.DifferResultGroup = GetDrillDownResultGroup(dsDrillDown, ResultGroup.ResultGroupType.Differ)
         SelectTabs(ResultGroup.ResultSetType.DrillDown)
     End Sub
+
+    Private Function GetDrillDownResultGroup(dsDrillDown As DataSet, resultGroupName As ResultGroup.ResultGroupType) As ResultGroup
+        Dim resultGroup As New ResultGroup(resultGroupName)
+        Dim tableIndex As Integer = 0
+        Select Case resultGroupName
+            Case ResultGroup.ResultGroupType.Match
+                tableIndex = 0
+                If _vm.MatchResultGroup IsNot Nothing Then
+                    resultGroup = _vm.MatchResultGroup
+                    _vm.MatchResultGroup = Nothing
+                End If
+            Case ResultGroup.ResultGroupType.Differ
+                tableIndex = 1
+                If _vm.DifferResultGroup IsNot Nothing Then
+                    resultGroup = _vm.DifferResultGroup
+                    _vm.DifferResultGroup = Nothing
+                End If
+        End Select
+
+        Dim resultSet As New ResultSet
+
+        resultSet.ResultSetDataView = dsDrillDown.Tables(tableIndex).AsDataView
+        resultSet.ResultSetSQL = "extracted"
+        resultSet.ResultSetRecordCount = dsDrillDown.Tables(tableIndex).Rows.Count
+        If resultGroup.ResultSets.ContainsKey(ResultGroup.ResultSetType.DrillDown) Then
+            resultGroup.ResultSets(ResultGroup.ResultSetType.DrillDown) = resultSet
+        Else
+            resultGroup.ResultSets.Add(ResultGroup.ResultSetType.DrillDown, resultSet)
+        End If
+
+        Return resultGroup
+    End Function
 
     Public Sub LoadReconSources(reconciliation As Reconciliation)
         If _vm.Reconciliation IsNot Nothing Then
@@ -96,20 +136,20 @@ Partial Class MainWindow
 
         Select Case reconSource.ReconDataSource.DataSourceName
             Case "Excel"
-                Using excel As New GetExcel
-                    reconSource.IsLoaded = excel.Load(reconSource)
+                Using getexcel As New GetExcel
+                    reconSource.IsLoaded = getexcel.Load(reconSource)
                 End Using
             Case "SQL"
-                Using sql As New GetSQL
-                    reconSource.IsLoaded = sql.Load(reconSource, _vm.Reconciliation.FromDate, _vm.Reconciliation.ToDate)
+                Using getsql As New GetSQL
+                    reconSource.IsLoaded = getsql.Load(reconSource, _vm.Reconciliation.FromDate, _vm.Reconciliation.ToDate)
                 End Using
             Case "QuickBooks"
                 If reconSource.IsLoaded = True And reconSource.ReconDataSource.IsSlowLoading Then
                     If reconSource.ReconDataSource.IsSlowLoading Then
                     End If
                 End If
-                Using qbd As New GetQBD
-                    reconSource.IsLoaded = qbd.LoadReport(reconSource, _vm.Reconciliation.FromDate, _vm.Reconciliation.ToDate)
+                Using getqbd As New GetQBD
+                    reconSource.IsLoaded = getqbd.LoadReport(reconSource, _vm.Reconciliation.FromDate, _vm.Reconciliation.ToDate)
                 End Using
         End Select
         If reconSource.IsLoaded Then
@@ -279,14 +319,14 @@ Partial Class MainWindow
                 Select Case resultSetName
                     Case ResultGroup.ResultSetType.Result
                         sqlCmd = Reconciliation.GetMatchResult(_vm.Reconciliation)
-                    Case ResultGroup.ResultSetType.DrillDown
-                        sqlCmd = "tbd"
                 End Select
         End Select
         Application.Message($"Getting results for {resultGroupName.ToString}:{resultSetName.ToString}.")
+
         Using sql As New SQL
             dtTable = sql.GetDataTable(sqlCmd)
         End Using
+
         If dtTable Is Nothing Then dtTable = New DataTable
 
         resultSet.ResultSetDataView = dtTable.AsDataView
